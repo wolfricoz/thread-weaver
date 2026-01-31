@@ -5,7 +5,7 @@ from discord.ext.commands import GroupCog, Bot
 from data.env.loader import env, load_environment
 
 
-class dev(GroupCog) :
+class Dev(GroupCog) :
 
 	def __init__(self, bot: Bot) :
 		self.bot = bot
@@ -23,5 +23,5 @@ class dev(GroupCog) :
 
 async def setup(bot: Bot) :
 	await bot.add_cog(
-		dev(bot),
+		Dev(bot),
 	)
