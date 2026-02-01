@@ -1,3 +1,4 @@
+# python
 import os
 from datetime import datetime
 from typing import List, Optional
@@ -14,64 +15,82 @@ from data.env.loader import env
 
 pymysql.install_as_MySQLdb()
 
-# https://docs.sqlalchemy.org/en/20/core/engines.html
-
-
-# creates the engine and session, nullpool is used to prevent connections from being reused to avoid stale connections, so you don't have to manage them yourself.
 engine = create_engine(
-	f"{env('DB_TYPE', 'mysql')}://{env('DB_USER', 'username')}:{env('DB_PASSWORD', 'password')}@{env('DB_HOST', "127.0.0.1")}:{env('DB_PORT', "3306")}/{env('DB_NAME', "template")}",
-	poolclass=NullPool)
+    f"{env('DB_TYPE', 'mysql')}://{env('DB_USER', 'username')}:{env('DB_PASSWORD', 'password')}@{env('DB_HOST', '127.0.0.1')}:{env('DB_PORT', '3306')}/{env('DB_NAME', 'template')}",
+    poolclass=NullPool)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-if not database_exists(engine.url) :
-	create_database(engine.url)
+if not database_exists(engine.url):
+    create_database(engine.url)
 
 conn = engine.connect()
 
 
-class Base(DeclarativeBase) :
-	pass
+class Base(DeclarativeBase):
+    pass
 
 
-# creates tables
-class Users(Base) :
-	__tablename__ = "users"
-	id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
-	messages: Mapped[int] = mapped_column(BigInteger, default=0)
-	xp: Mapped[int] = mapped_column(BigInteger, default=0)
+class Config(Base):
+    __tablename__ = "config"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    guild: Mapped[int] = mapped_column(BigInteger, ForeignKey("servers.id", ondelete="CASCADE"))
+    key: Mapped[str] = mapped_column(String(512))
+    value: Mapped[str] = mapped_column(String(1980))
 
 
-class Levels(Base) :
-	__tablename__ = "levels"
-	id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-	guildid: Mapped[int] = mapped_column(BigInteger)
-	role_id: Mapped[int] = mapped_column(BigInteger)
-	xp_required: Mapped[int] = mapped_column(BigInteger)
+class Servers(Base):
+    __tablename__ = "servers"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    owner: Mapped[str] = mapped_column(String(1024))
+    name: Mapped[str] = mapped_column(String(1024))
+    member_count: Mapped[int] = mapped_column(BigInteger)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False)
+    invite: Mapped[str] = mapped_column(String(256), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=None, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    premium: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    owner_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    forums: Mapped[List["Forums"]] = relationship("Forums", back_populates="server", cascade="all, delete-orphan")
+
+    def __int__(self):
+        return self.id
 
 
-class Channels(Base) :
-	__tablename__ = "channels"
-	id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-	guildid: Mapped[int] = mapped_column(BigInteger)
-	channelid: Mapped[int] = mapped_column(BigInteger)
+class Forums(Base):
+    __tablename__ = "forums"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    server_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("servers.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(1024))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    server: Mapped["Servers"] = relationship("Servers", back_populates="forums")
+    patterns: Mapped[List["ForumPatterns"]] = relationship("ForumPatterns", back_populates="forum", cascade="all, delete-orphan")
 
 
-
-class database :
-	@staticmethod
-	def create() :
-		Base.metadata.create_all(engine)
-		print("Database built")
-
-
-
-def create_bot_database() :
-	Base.metadata.create_all(engine)
+class ForumPatterns(Base):
+    __tablename__ = "forum_patterns"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(256))
+    forum_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("forums.id", ondelete="CASCADE"))
+    pattern: Mapped[str] = mapped_column(String(1000))
+    forum: Mapped["Forums"] = relationship("Forums", back_populates="patterns")
 
 
-def drop_bot_database() :
-	if os.getenv('DISCORD_TOKEN') is not None :
-		raise Exception("You cannot drop the database while the bot is in production")
-	Session = sessionmaker(bind=engine)
-	session = Session()
-	session.close_all()
-	Base.metadata.drop_all(engine)
+class database:
+    @staticmethod
+    def create():
+        Base.metadata.create_all(engine)
+        print("Database built")
+
+
+def create_bot_database():
+    Base.metadata.create_all(engine)
+
+
+def drop_bot_database():
+    if os.getenv('DISCORD_TOKEN') is not None:
+        raise Exception("You cannot drop the database while the bot is in production")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    session.close_all()
+    Base.metadata.drop_all(engine)
