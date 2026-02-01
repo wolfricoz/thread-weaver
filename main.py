@@ -5,6 +5,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+from discord_py_utilities.messages import send_message
 from fastapi import FastAPI
 
 import discord
@@ -14,6 +15,7 @@ from sqlalchemy.orm import Session
 
 import api
 from data.env.loader import env, load_environment
+from project.data import BOT_NAME, VERSION
 
 # loads env and variables
 load_environment()
@@ -76,11 +78,19 @@ for router in api.__all__ :
 		logging.error(f"Failed to load {router}: {e}")
 
 
+async def send_startup_notification() :
+	dev_channel = bot.get_channel(int(env('DEVCHANNEL', 0)))
+	if dev_channel is None :
+		logging.warning(f"Dev channel {env('DEVCHANNEL', 0)} not found")
+		return
+	await send_message(dev_channel, f"{BOT_NAME} version {VERSION} is in {len(bot.guilds)} servers and has started up successfully!")
+
+
 # start up event; bot.tree.sync is required for the slash commands.
 @bot.event
 async def on_ready() :
 	# You can add the items you want on start up here.
-
+	await send_startup_notification()
 	# Synchronises the slash commands with discord.
 	await bot.tree.sync()
 	print("Commands synced, start up _done_")
