@@ -4,7 +4,7 @@ from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
 
-class TasksCog(Cog) :
+class ForumTasks(Cog) :
 
 	def __init__(self, bot: Bot) :
 		self.bot = bot
@@ -33,5 +33,5 @@ class TasksCog(Cog) :
 
 async def setup(bot: Bot) :
 	await bot.add_cog(
-		TasksCog(bot),
+		ForumTasks(bot),
 	)
