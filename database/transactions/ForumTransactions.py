@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload
 
 from database.database import ForumPatterns, Forums
@@ -39,6 +39,14 @@ class ForumTransactions(DatabaseTransactions):
 			self.commit(session)
 			return forum
 
+	def delete(self, channel_id: int) -> None :
+		with self.createsession() as session:
+			forum = self.get(channel_id, current_session=session)
+			if forum is None :
+				return
+			session.delete(forum)
+			self.commit(session)
+
 	def get(self, channel_id, current_session = None) -> Forums | None :
 		with self.createsession() as session:
 			if current_session :
@@ -53,7 +61,7 @@ class ForumTransactions(DatabaseTransactions):
 	# Patterns are added here, because they are directly linked to forums. A separate transaction class would be overkill.
 
 
-	def add_pattern(self, channel_id: int, name: str, pattern: str) -> ForumPatterns | None :
+	def add_pattern(self, channel_id: int, name: str, pattern: str, action: str = "BLOCK") -> ForumPatterns | None :
 		with self.createsession() as session:
 			forum = self.get(channel_id)
 			if forum is None :
@@ -61,7 +69,8 @@ class ForumTransactions(DatabaseTransactions):
 			p = ForumPatterns(
 				name=name,
 				forum_id=forum.id,
-				pattern=pattern
+				pattern=pattern,
+				action=action.upper()
 			)
 			session.add(p)
 			self.commit(session)
@@ -76,9 +85,14 @@ class ForumTransactions(DatabaseTransactions):
 			self.commit(session)
 			return True
 
-
-
-	def get_pattern(self, pattern_id: int) -> ForumPatterns | None :
+	def get_pattern(self, channel_id: int, name: str) -> ForumPatterns | None :
 		with self.createsession() as session:
-			return session.get(ForumPatterns, pattern_id)
+			return session.scalar(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id, ForumPatterns.name == name))
 
+	def get_all_patterns(self, channel_id: int) -> list[ForumPatterns] :
+		with self.createsession() as session:
+			return session.scalars(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id)).all()
+
+	def count_patterns(self, channel_id: int) -> int :
+		with self.createsession() as session:
+			return session.scalar(text("SELECT COUNT(*) FROM forum_patterns WHERE forum_id = :channel_id", {"channel_id": channel_id}))

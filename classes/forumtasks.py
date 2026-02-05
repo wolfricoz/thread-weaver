@@ -1,9 +1,9 @@
 import logging
 from collections.abc import AsyncIterator
 
-import discord
-from discord import Thread
-from discord.ext import commands
+import discordcontrollers
+from discordcontrollers import Thread
+from discordcontrollers.ext import commands
 
 from classes.config import GuildConfig
 from classes.support.queue import queue
@@ -11,10 +11,10 @@ from classes.support.queue import queue
 
 class ForumTasks :
 
-	def __init__(self, forum: discord.ForumChannel, bot: commands.Bot) :
+	def __init__(self, forum: discordcontrollers.ForumChannel, bot: commands.Bot) :
 		# setting up the data all the underlying functions need to reduce api calls.
-		self.forum: discord.ForumChannel = forum
-		self.threads: list[discord.Thread] = forum.threads
+		self.forum: discordcontrollers.ForumChannel = forum
+		self.threads: list[discordcontrollers.Thread] = forum.threads
 		self.archived: AsyncIterator[Thread] = forum.archived_threads(limit=None)
 		self.members: list[int] = [member.id for member in forum.guild.members]
 		self.bot = bot
@@ -39,14 +39,14 @@ class ForumTasks :
 				return
 			queue().add(archived_thread.edit(archived=False))
 
-	async def cleanup_forum(self, thread: discord.Thread) :
+	async def cleanup_forum(self, thread: discordcontrollers.Thread) :
 		logging.info("Cleaning up the forum")
 		if self.check_user(thread.owner) is None :
 			logging.info(f"{thread.name}'s user left, cleaning up")
 			queue().add(thread.delete())
 			return
 
-	def check_user(self, member: discord.Member) -> None | discord.Member :
+	def check_user(self, member: discordcontrollers.Member) -> None | discordcontrollers.Member :
 		if member is None :
 			return None
 		if member.id not in self.members :
