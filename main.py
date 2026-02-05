@@ -48,6 +48,10 @@ async def lifespan(app: FastAPI) :
 			# Graceful cancellation
 			await bot.close()
 			raise
+		except Exception as e :
+			print(e)
+			logging.error(f"Failed to start {BOT_NAME}: {e}", exc_info=True)
+
 
 	logging.info("Starting bot...")
 	bot_task = asyncio.create_task(run_bot())
