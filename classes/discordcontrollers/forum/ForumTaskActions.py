@@ -8,7 +8,9 @@ from discord.ext import commands
 from classes.kernel.queue import Queue
 
 
-class ForumTasks :
+# This needs to be completely overhauled.
+
+class ForumTask :
 
 	def __init__(self, forum: discord.ForumChannel, bot: commands.Bot) :
 		# setting up the data all the underlying functions need to reduce api calls.
