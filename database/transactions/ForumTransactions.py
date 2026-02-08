@@ -95,4 +95,4 @@ class ForumTransactions(DatabaseTransactions):
 
 	def count_patterns(self, channel_id: int) -> int :
 		with self.createsession() as session:
-			return session.scalar(text("SELECT COUNT(*) FROM forum_patterns WHERE forum_id = :channel_id", {"channel_id": channel_id}))
+			return session.scalar(text("SELECT COUNT(*) FROM forum_patterns WHERE forum_id = :channel_id"),  {"channel_id": channel_id})
