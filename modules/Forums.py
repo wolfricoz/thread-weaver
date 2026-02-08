@@ -2,6 +2,7 @@ import logging
 import re
 
 import discord
+from classes.forumtasks import ForumTasks
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext.commands import Bot, GroupCog
@@ -9,13 +10,9 @@ from discord_py_utilities.messages import send_message, send_response
 
 from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
-from classes.forumtasks import ForumTasks
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.queue import Queue
-from database.transactions.ConfigTransactions import ConfigTransactions
-from database.transactions.ForumCleanupTransactions import ForumCleanupTransactions
 from database.transactions.ForumTransactions import ForumTransactions
-from views.select.ForumSelect import ForumSelect
 
 OPERATION_CHOICES = [
 	Choice(name="Add", value="add"),
@@ -23,19 +20,15 @@ OPERATION_CHOICES = [
 	Choice(name="List", value="list"),
 ]
 
+
 class Forums(GroupCog, name="forum", description="Forum management commands") :
 	"""
 	Forum management commands
 
 	"""
 
-
-
-
 	def __init__(self, bot: Bot) :
 		self.bot = bot
-
-
 
 	@app_commands.command(name="add", description="Adds the forums to the bots database")
 	@app_commands.checks.has_permissions(manage_guild=True)
@@ -91,7 +84,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		success = 0
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 		forums = await ForumController.select_forums(interaction,
-		                                  "Please select the forum channel(s) you want to manage patterns for:")
+		                                             "Please select the forum channel(s) you want to manage patterns for:")
 		match operation.value.lower() :
 			case "add" :
 				if not name or not pattern or not action :
@@ -155,7 +148,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 		forums = await ForumController.select_forums(interaction,
-		                                  f"Select your forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
+		                                             f"Select your forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
 		for forum in forums :
@@ -238,8 +231,17 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                   default_reaction_emoji=forum.default_reaction_emoji), priority=2)
 		await send_message(interaction.channel, f"Forum {forum.mention} copied to {f.mention}")
 
+	@app_commands.command(name="add_all", description="Adds all forums to the bot.")
+	@app_commands.checks.has_permissions(manage_channels=True)
+	async def add_all(self, interaction: discord.Interaction) :
+		forums = [forum for forum in interaction.guild.channels if forum.type == discord.ChannelType.forum]
+		for forum in forums :
+			ForumTransactions().add(forum.id, interaction.user.id, forum.name)
+		await send_response(interaction, f"Successfully added all forums to {interaction.user.name}!")
 
-
+	# Config here:
+	# - Prevent duplicates (Local, global, off)
+	# - Thread log
 
 	@app_commands.command(name="purge")
 	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
