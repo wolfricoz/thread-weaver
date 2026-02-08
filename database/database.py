@@ -4,13 +4,15 @@ from datetime import datetime
 from typing import List
 
 import pymysql
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, create_engine
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import func
 from sqlalchemy_utils import create_database, database_exists
 
-from data.env.loader import env
+from data.env.loader import env, load_environment
+
+load_environment()
 
 pymysql.install_as_MySQLdb()
 
@@ -65,6 +67,8 @@ class Forums(Base) :
 	server: Mapped["Servers"] = relationship("Servers", back_populates="forums")
 	patterns: Mapped[List["ForumPatterns"]] = relationship("ForumPatterns", back_populates="forum",
 	                                                       cascade="all, delete-orphan")
+	cleanup: Mapped[List["ForumPatterns"]] = relationship("ForumCleanup", back_populates="forum",
+	                                                       cascade="all, delete-orphan")
 
 
 class ForumPatterns(Base) :
@@ -75,6 +79,16 @@ class ForumPatterns(Base) :
 	action: Mapped[str] = mapped_column(String(100))
 	pattern: Mapped[str] = mapped_column(String(1000))
 	forum: Mapped["Forums"] = relationship("Forums", back_populates="patterns")
+
+
+class ForumCleanup(Base) :
+	__tablename__ = "forum_cleanup"
+	id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+	forum_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("forums.id", ondelete="CASCADE"), unique=True)
+	key: Mapped[str] = mapped_column(String(100)) # CLEANUPLEFT, CLEANUPDAYS
+	days: Mapped[int] = mapped_column(BigInteger, nullable=True, default=0)
+	extra: Mapped[str] = mapped_column(Text, nullable=True)
+	forum: Mapped["Forums"] = relationship("Forums", back_populates="cleanup")
 
 
 class Staff(Base) :

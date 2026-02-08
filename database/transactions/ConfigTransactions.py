@@ -153,8 +153,6 @@ class ConfigTransactions(DatabaseTransactions) :
 				item.value = value
 				from classes.kernel.ConfigData import ConfigData
 				DatabaseTransactions().commit(session)
-
-
 				ConfigData().load_guild(guildid)
 				return
 			welcome = db.Config(guild=guildid, key=key.upper(), value=value)
