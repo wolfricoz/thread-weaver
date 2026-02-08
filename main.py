@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 import api
+from classes.kernel.AccessControl import AccessControl
 from data.env.loader import env, load_environment
 from project.data import BOT_NAME, VERSION
 
@@ -95,6 +96,8 @@ async def send_startup_notification() :
 async def on_ready() :
 	# You can add the items you want on start up here.
 	await send_startup_notification()
+	AccessControl().reload()
+
 	# Synchronises the slash commands with discord.
 	await bot.tree.sync()
 	print("Commands synced, start up _done_")
