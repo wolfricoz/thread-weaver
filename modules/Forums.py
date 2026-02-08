@@ -7,14 +7,21 @@ from discord.app_commands import Choice
 from discord.ext.commands import Bot, GroupCog
 from discord_py_utilities.messages import send_message, send_response
 
-from classes.Blacklist import Blacklist
+from classes.discordcontrollers.forum.ForumController import ForumController
+from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.forumtasks import ForumTasks
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.queue import Queue
+from database.transactions.ConfigTransactions import ConfigTransactions
+from database.transactions.ForumCleanupTransactions import ForumCleanupTransactions
 from database.transactions.ForumTransactions import ForumTransactions
-from resources.configs.FreeLimits import FREE_BLACKLIST_WORD_LIMIT
 from views.select.ForumSelect import ForumSelect
 
+OPERATION_CHOICES = [
+	Choice(name="Add", value="add"),
+	Choice(name="Remove", value="remove"),
+	Choice(name="List", value="list"),
+]
 
 class Forums(GroupCog, name="forum", description="Forum management commands") :
 	"""
@@ -22,14 +29,13 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 
 	"""
 
+
+
+
 	def __init__(self, bot: Bot) :
 		self.bot = bot
 
-	async def select_forums(self, interaction: discord.Interaction, response: str) :
-		forumselect = ForumSelect()
-		await send_response(interaction, response, view=forumselect, ephemeral=True)
-		await forumselect.wait()
-		return forumselect.selected_channels
+
 
 	@app_commands.command(name="add", description="Adds the forums to the bots database")
 	@app_commands.checks.has_permissions(manage_guild=True)
@@ -40,7 +46,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = self.select_forums(interaction, "Select your forum channel(s) to add")
+		forums = ForumController.select_forums(interaction, "Select your forum channel(s) to add")
 		for forum in forums :
 			ForumTransactions().add(
 				channel_id=forum.id,
@@ -59,54 +65,86 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 
-		forums = await self.select_forums(interaction, "Select your forum channel(s) to remove")
+		forums = await ForumController.select_forums(interaction, "Select your forum channel(s) to remove")
 		for forum in forums :
 			ForumTransactions().delete(forum.id)
 		await send_response(interaction, f"Removed {len(forums)} forum channel(s) from the database.", ephemeral=True)
 
-	@app_commands.command(name="add_pattern", description="Adds a pattern for forum threads to check (regex)")
+	@app_commands.command(name="patterns", description="Adds/removes/lists patterns for forum threads (regex)")
 	@app_commands.checks.has_permissions(manage_guild=True)
 	@app_commands.choices(
+		operation=OPERATION_CHOICES,
 		action=[
 			Choice(name="Delete Thread", value="block"),
 			Choice(name="Warn staff", value="warn"),
-		]
+		],
 	)
 	@AccessControl().check_premium()
-	async def add_pattern(self, interaction: discord.Interaction, name: str, pattern: str, action: Choice[str]) :
+	async def add_pattern(self, interaction: discord.Interaction, operation: Choice[str], name: str = None,
+	                      pattern: str = None, action: Choice[str] = None) :
 		"""
-		Adds a pattern for forum threads to check.
-
-		[Include a guide here on regex patterns and how to use them]
+		Add / Remove / List patterns for forum threads.
 
 		Permissions:
 		- Manage guild
 		"""
-		try :
-			re.compile(pattern)
-		except re.error :
-			await send_response(interaction,
-			                    f"The provided pattern is not a valid regex pattern. Please check your pattern and try again.",
-			                    ephemeral=True)
-			return
+		success = 0
+		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
+		forums = await ForumController.select_forums(interaction,
+		                                  "Please select the forum channel(s) you want to manage patterns for:")
+		match operation.value.lower() :
+			case "add" :
+				if not name or not pattern or not action :
+					await send_response(interaction,
+					                    "To add a pattern you must provide `name`, `pattern` and `action`.",
+					                    ephemeral=True)
+					return
+				try :
+					re.compile(pattern)
+				except re.error :
+					await send_response(interaction,
+					                    "The provided pattern is not a valid regex pattern. Please check your pattern and try again.",
+					                    ephemeral=True)
+					return
 
-		forums = self.select_forums(interaction,
-		                            "Select your forum channel(s) to add the pattern to! Patterns are [Regex-based](https://regex101.com/), so make sure to test them there first.")
-		for forum in forums :
-			ForumTransactions().add_pattern(
-				channel_id=forum.id,
-				name=name,
-				action=action.value.upper(),
-				pattern=pattern,
-			)
+				for forum in forums :
+					result = await controller.add_pattern(interaction, forum, name, pattern, action.value.upper())
+					if result is not None :
+						return
+					success += 1
 
-		await send_response(interaction, f"Added pattern to {len(forums)} forum channel(s).", ephemeral=True)
+				await send_response(interaction, f"Added pattern to {success} forum channel(s).", ephemeral=True)
+
+			case "remove" :
+				if not name :
+					await send_response(interaction,
+					                    "To remove a pattern you must provide the `pattern` to remove.",
+					                    ephemeral=True)
+
+					return
+
+				for forum in forums :
+					# Expecting a removal method on ForumTransactions; adjust if your API differs.
+					result = await controller.remove_pattern(interaction, forum, name)
+					if result is not None :
+						return
+					success += 1
+
+				await send_response(interaction, f"Removed pattern from {success} forum channel(s).", ephemeral=True)
+
+			case "list" :
+				for forum in forums :
+					patterns = ForumTransactions().get_all_patterns(forum.id)
+					if not patterns :
+						await send_response(interaction, f"No patterns configured for {forum.name}.", ephemeral=True)
+						continue
+					formatted = "\n".join([f"{p.name}: `{p.pattern}` (Action: {p.action})" for p in patterns])
+					await send_response(interaction, f"Patterns for {forum.name}:\n{formatted}", ephemeral=True)
+				return
 
 	@app_commands.command(name="blacklist_word", description="Adds/Removes a word to the forum blacklist [simple]")
 	@app_commands.choices(operation=[
-		Choice(name="Add", value="add"),
-		Choice(name="Remove", value="remove"),
-		Choice(name="List", value="list"),
+
 	])
 	@app_commands.checks.has_permissions(manage_guild=True)
 	async def blacklist_word(self, interaction: discord.Interaction, operation: Choice[str], word: str) :
@@ -116,25 +154,34 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = self.select_forums(interaction,
-		                            f"Select your forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
+		forums = await ForumController.select_forums(interaction,
+		                                  f"Select your forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
+		blacklist = ForumPatternController(interaction.guild.id)
+		success = 0
 		for forum in forums :
 			match operation.value.lower() :
 
 				case "add" :
-					await Blacklist.add_pattern(interaction, forum, word, word, action="BLACKLIST")
+					result = await blacklist.add_pattern(interaction, forum, word, word, action="BLACKLIST")
+					if result is not None :
+						return
+					success += 1
 
 				case "remove" :
-					await Blacklist.remove_pattern(interaction, forum, word)
-				case "list":
+					result = await blacklist.remove_pattern(interaction, forum, word)
+					if result is not None :
+						return
+					success += 1
+				case "list" :
 					words = ForumTransactions().get_all_patterns(forum.id)
-					await send_response(interaction, f"Blacklisted words for {forum.name}:\n" + "\n".join([f"{pattern.name}: `{pattern.pattern}` (Action: {pattern.action})" for pattern in words]), ephemeral=True)
+					await send_response(interaction, f"Blacklisted words for {forum.name}:\n" + "\n".join(
+						[f"{pattern.name}: `{pattern.pattern}` (Action: {pattern.action})" for pattern in words]), ephemeral=True)
 
-
+		if operation.value.lower() == "list" :
+			return
 		await send_response(interaction,
 		                    f"{operation.name}ed the word `{word}` {'to' if operation.value == 'add' else 'from'} the blacklist for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
-
 
 	@app_commands.command(name='stats')
 	@app_commands.checks.has_permissions(manage_channels=True)
@@ -156,7 +203,6 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			embed.add_field(name=key, value=value, inline=False)
 		await send_message(interaction.channel, embed=embed)
 
-
 	@app_commands.command(name="recover", description="Recover archived posts")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def recover(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
@@ -176,7 +222,6 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			forum = ForumTasks(channel, self.bot)
 			Queue().add(forum.start())
 
-
 	@app_commands.command(name="copy", description="Copy a forum with all settings!")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def copy(self, interaction: discord.Interaction, forum: discord.ForumChannel, name: str = None) :
@@ -194,37 +239,32 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		await send_message(interaction.channel, f"Forum {forum.mention} copied to {f.mention}")
 
 
-# @app_commands.command(name="cleanup_toggle")
-# async def cleanup_toggle(self, interaction: discord.Interaction, active: bool) :
-# 	"""Toggle the removal of threads from users that left. Disabled by default"""
-# 	config = GuildConfig(interaction.guild.id)
-# 	config.set("cleanup", active)
-# 	await send_response(interaction, f"Cleanup is now {active}", ephemeral=True)
 
-@app_commands.command(name="purge")
-async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
-	"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""
-	await send_response(interaction, f"Purge all threads in {forum.name}", ephemeral=True)
-	for thread in forum.threads :
-		if notify_user :
-			try :
-				starter_msg = await thread.fetch_message(thread.id)
-			except discord.NotFound :
-				logging.error(
-					f"Could not fetch message for thread {thread.name} in {forum.name}, it might have been deleted.")
-				starter_msg = None
-			if not starter_msg :
-				logging.error(f"Could not fetch message for thread {thread.name} in {forum.name}")
-				Queue().add(thread.delete())
-				continue
-			Queue().add(send_message(thread.owner,
-			                         f"Your thread {thread.name} in {forum.name} is being purged, here are the contents:"
-			                         f"\ntitle: {thread.name}\ncontent: {starter_msg.content}"), priority=2)
-		Queue().add(thread.delete())
-	else :
-		Queue().add(send_message(interaction.channel, f"Purge complete for {forum.name}"), 0)
-	Queue().add(send_message(interaction.channel, f"Queueing purge of {len(forum.threads)} threads in {forum.name}."),
-	            priority=2)
+
+	@app_commands.command(name="purge")
+	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
+		"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""
+		await send_response(interaction, f"Purge all threads in {forum.name}", ephemeral=True)
+		for thread in forum.threads :
+			if notify_user :
+				try :
+					starter_msg = await thread.fetch_message(thread.id)
+				except discord.NotFound :
+					logging.error(
+						f"Could not fetch message for thread {thread.name} in {forum.name}, it might have been deleted.")
+					starter_msg = None
+				if not starter_msg :
+					logging.error(f"Could not fetch message for thread {thread.name} in {forum.name}")
+					Queue().add(thread.delete())
+					continue
+				Queue().add(send_message(thread.owner,
+				                         f"Your thread {thread.name} in {forum.name} is being purged, here are the contents:"
+				                         f"\ntitle: {thread.name}\ncontent: {starter_msg.content}"), priority=2)
+			Queue().add(thread.delete())
+		else :
+			Queue().add(send_message(interaction.channel, f"Purge complete for {forum.name}"), 0)
+		Queue().add(send_message(interaction.channel, f"Queueing purge of {len(forum.threads)} threads in {forum.name}."),
+		            priority=2)
 
 
 async def setup(bot: Bot) :
