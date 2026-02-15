@@ -12,7 +12,9 @@ from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.queue import Queue
+from classes.support.regex import verify_regex, verify_regex_length, verify_regex_pattern
 from database.transactions.ForumTransactions import ForumTransactions
+from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 
 OPERATION_CHOICES = [
 	Choice(name="Add", value="add"),
@@ -92,13 +94,17 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 					                    "To add a pattern you must provide `name`, `pattern` and `action`.",
 					                    ephemeral=True)
 					return
-				try :
-					re.compile(pattern)
-				except re.error :
+
+				valid_length = verify_regex_length(pattern)
+				if not valid_length:
+					await send_response(interaction, f"The provided pattern is too long ({REGEX_MAX_LIMIT}) or too short ({REGEX_MIN_LIMIT})", ephemeral=True)
+
+				valid_pattern = verify_regex_pattern(pattern)
+				if not valid_pattern:
 					await send_response(interaction,
 					                    "The provided pattern is not a valid regex pattern. Please check your pattern and try again.",
 					                    ephemeral=True)
-					return
+				logging.info(valid_pattern)
 
 				for forum in forums :
 					result = await controller.add_pattern(interaction, forum, name, pattern, action.value.upper())
