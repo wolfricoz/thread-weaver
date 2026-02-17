@@ -8,3 +8,4 @@ psycopg2
 postgres
 discord-py-utilities>=0.0.9.7
 fastapi
+requests

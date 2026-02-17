@@ -7,6 +7,7 @@ from discord_py_utilities.messages import send_message, send_response
 
 from classes.kernel.AccessControl import AccessControl
 from classes.support.ThreadArchive import ThreadArchive
+from views.buttons.ConfirmButtons import ConfirmButtons
 
 
 class Export(GroupCog, name="export") :
@@ -17,7 +18,7 @@ class Export(GroupCog, name="export") :
 	@app_commands.command(name="thread", description="Creates an export of a specific thread")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
-	async def thread(self, interaction: discord.Interaction, thread: discord.Thread) :
+	async def thread(self, interaction: discord.Interaction, thread: discord.Thread, delete: bool = False) :
 		"""
 		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
@@ -25,7 +26,13 @@ class Export(GroupCog, name="export") :
 		- `Manage Threads`
 		- `Premium Access`
 		"""
-		await send_response(interaction, f"Creating an export of `{thread.name}`, this may take a while... The results will be sent to your DMs", ephemeral=True)
+		buttons = ConfirmButtons(confirm_message=f"Creating an export of `{thread.name}`, this may take a while... The results will be sent to your DMs")
+		result = await buttons.send_confirmation(interaction,
+		                                 f"Are you sure you want to export `{thread.name}`? This will create a .zip file containing the thread's messages and image attachments. if you delete the thread after export, non-image attachments may not work as they rely on the url provided by discord, which is deleted when the message/thread is deleted. Threads with a large amount of images may fail to export due to the size of the .zip file. If you have any issues with the export, please contact support.",
+		                                 )
+		if not result:
+			logging.info(f"{interaction.user} cancelled the export of {thread.name}")
+			return
 		export_class = ThreadArchive(interaction.guild.name + "_" + thread.name, channel=thread)
 		await export_class.run()
 		try:
@@ -35,7 +42,15 @@ class Export(GroupCog, name="export") :
 		except Exception as e:
 			await send_message(interaction.user, f"{interaction.user.mention}, an error occurred while sending you the export: {e}")
 			logging.error(e, exc_info=True)
+			return
 		await export_class.clean_up()
+		if not delete:
+			return
+		try:
+			await thread.delete()
+		except Exception as e:
+			await send_message(interaction.channel, f"{interaction.user.mention}, an error occurred while deleting the thread: {e}", error_mode="ignore")
+			logging.error(e, exc_info=True)
 
 
 

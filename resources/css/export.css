@@ -78,3 +78,48 @@ body {
   font-size: 0.875rem;
   color: var(--text-normal);
 }
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+/* This ensures images sit side-by-side and wrap properly */
+.attachment-container {
+  display: flex;
+  flex-wrap: wrap; /* Allows images to go to the next line */
+  gap: 8px;       /* Space between images */
+  margin-top: 4px;
+}
+
+.attachment {
+  max-width: 300px;
+  max-height: 300px;
+  height: auto;
+  border-radius: 8px; /* Slightly rounder for a modern look */
+  display: block;
+  object-fit: contain;
+  cursor: pointer;
+
+  /* Create a transparent border by default so the image doesn't "jump" when hovered */
+  border: 2px solid transparent;
+
+  /* Smooth transition for all effects */
+  transition: transform 0.2s ease-in-out, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.attachment:hover {
+  /* The "Nice" Border: Using your Discord-style blue */
+  border-color: var(--text-link);
+
+  /* Lift effect: Makes the image pop out slightly */
+  transform: scale(1.02);
+
+  /* Soft Glow: Adds depth behind the image */
+  box-shadow: 0 4px 15px rgba(0, 168, 252, 0.3);
+
+  /* Ensure it stays on top of other images while scaling */
+  z-index: 10;
+  position: relative;
+}

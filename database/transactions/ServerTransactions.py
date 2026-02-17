@@ -131,3 +131,8 @@ class ServerTransactions(DatabaseTransactions) :
 	def get_owners_servers(self, owner_id) :
 		with self.createsession() as session :
 			return session.scalars(Select(Servers).where(Servers.owner_id == owner_id)).all()
+
+	def set_all_inactive(self):
+		with self.createsession() as session :
+			session.query(Servers).filter(Servers.deleted_at.is_(None)).update({Servers.active: False})
+			self.commit(session)

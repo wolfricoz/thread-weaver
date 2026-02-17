@@ -71,19 +71,23 @@ class ThreadArchive():
 		async for message in thread.history(limit=None, oldest_first=True) :
 			# For each message, we will create a div with the message content and attachments.
 			html += f"<div class='message'><p><strong>{message.author}</strong> at {message.created_at.strftime("%m/%d/%Y %H:%M")}:</p><p>{message.content}</p>"
+			if not message.attachments :
+				continue
+			html += '<div class="attachment-container">'
 			for attachment in message.attachments :
 				if attachment.content_type and attachment.content_type.startswith("image/") :
 					# If the attachment is an image, we will download it and add it to the html.
 					image_path = f"images/{attachment.filename}"
 					await attachment.save(f"{archive_path}/{image_path}")
-					html += f"<img src='{image_path}' alt='{attachment.filename}' class='attachment'>"
+					html += f"<a href='{image_path}' title='Click to view full image' target='_blank'><img src='{image_path}' alt='{attachment.filename}' class='attachment'></a>"
 				else :
 					# If the attachment is not an image, we will just add a link to it.
 					html += f"<p><a href='{attachment.url}' target='_blank'>{attachment.filename}</a></p>"
+			html += '</div></div><hr>'
 
 		# close the html tags
 		html += f"</body></html>"
-		return html
+		return html.replace(">", ">\n")
 
 	async def create_file(self, thread, html, file_path: str) :
 		"""This will create a .html command for the thread and save it to the archives folder."""
