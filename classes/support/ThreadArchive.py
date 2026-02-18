@@ -27,14 +27,11 @@ class ThreadArchive():
 
 		# Check if its a thread of a forum.
 		await self.get_threads()
-		logging.info(self.threads)
 
 		for thread in self.threads:
 			archive_dir, file_path = await self.create_dir(thread)
 			html = await self.thread_to_html(thread, archive_dir)
-			logging.info(html)
 			await self.create_file(thread, html, file_path)
-			logging.info(f"Created {len(self.archives)} archives for {self.name}")
 			await self.create_zip()
 
 
