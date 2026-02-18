@@ -2,7 +2,7 @@ import logging
 import re
 
 import discord
-from classes.forumtasks import ForumTasks
+
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext.commands import Bot, GroupCog
@@ -12,7 +12,7 @@ from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.queue import Queue
-from classes.support.regex import verify_regex, verify_regex_length, verify_regex_pattern
+from classes.support.regex import verify_regex_length, verify_regex_pattern
 from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 
@@ -21,6 +21,10 @@ OPERATION_CHOICES = [
 	Choice(name="Remove", value="remove"),
 	Choice(name="List", value="list"),
 ]
+
+# placeholder
+class ForumTasks :
+	pass
 
 
 class Forums(GroupCog, name="forum", description="Forum management commands") :

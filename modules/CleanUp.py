@@ -177,6 +177,9 @@ class CleanUp(GroupCog, name="cleanup") :
 						continue
 					success.append(forum)
 					ForumCleanupTransactions().add(forum.id, _key, days=days, extra=valid_pattern)
+					await send_response(interaction,
+					                    f"Posts with {pattern} in {', '.join([forum.mention for forum in success])} will be automatically removed.",
+					                    ephemeral=True)
 				return None
 			case "remove" :
 				for forum in forums :
@@ -187,7 +190,7 @@ class CleanUp(GroupCog, name="cleanup") :
 					ForumCleanupTransactions().delete(forum.id, _key)
 
 				await send_response(interaction,
-				                    f"Removed the old post cleanup from {', '.join([forum.mention for forum in success])}.",
+				                    f"Removed the regex cleanup from {', '.join([forum.mention for forum in success])}.",
 				                    ephemeral=True)
 				return None
 			case "list" :

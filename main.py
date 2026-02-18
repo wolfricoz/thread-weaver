@@ -34,7 +34,7 @@ intents.message_content = True
 intents.members = True
 # this sets your bots activity
 activity = discord.Activity(type=discord.ActivityType.watching, name="over SERVER NAME")
-bot = commands.Bot(command_prefix=env(''), case_insensitive=False, intents=intents, activity=activity)
+bot = commands.Bot(command_prefix="fm?", case_insensitive=False, intents=intents, activity=activity)
 
 
 # Api imports, this allows you to run the bot as an api if required. This is 100% optional.

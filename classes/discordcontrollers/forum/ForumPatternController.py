@@ -4,7 +4,7 @@ from discord_py_utilities.messages import send_message
 
 from classes.kernel.AccessControl import AccessControl
 from database.transactions.ForumTransactions import ForumTransactions
-from resources.configs.FreeLimits import FREE_BLACKLIST_WORD_LIMIT
+from resources.configs.Limits import FREE_BLACKLIST_WORD_LIMIT
 
 
 class ForumPatternController :
