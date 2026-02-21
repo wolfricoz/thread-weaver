@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 from database.database import ForumPatterns, Forums
 from database.transactions.DatabaseTransactions import DatabaseTransactions
 from database.transactions.ServerTransactions import ServerTransactions
-
+from data.enums.PatternTypes import ForumPatterns as FP
 
 class ForumTransactions(DatabaseTransactions):
 
@@ -24,13 +24,14 @@ class ForumTransactions(DatabaseTransactions):
 			self.commit(session)
 			return forum
 
-	def update(self, channel_id: int, name: str) -> Forums | None :
+	def update(self, channel_id: int, name: str = None, minimum_characters: int = None) -> Forums | None :
 		with self.createsession() as session:
 			forum = self.get(channel_id)
 			if forum is None :
 				return None
 			available_fields = {
-				"name": name
+				"name": name,
+				"minimum_characters": minimum_characters
 			}
 			for key, value in available_fields.items():
 				if value is not None:
@@ -53,8 +54,10 @@ class ForumTransactions(DatabaseTransactions):
 				session = current_session
 			return session.scalar(select(Forums).outerjoin(ForumPatterns).options(joinedload(Forums.patterns)).where(Forums.id == channel_id))
 
-	def get_all(self, server_id) -> list[Forums] :
+	def get_all(self, server_id, id_only = False) -> list[Forums] :
 		with self.createsession() as session:
+			if id_only :
+				return session.scalars(select(Forums.id).where(Forums.server_id == server_id)).all()
 			return session.scalars(select(Forums).where(Forums.server_id == server_id)).all()
 
 	# === Patterns === #
@@ -89,8 +92,14 @@ class ForumTransactions(DatabaseTransactions):
 		with self.createsession() as session:
 			return session.scalar(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id, ForumPatterns.name == name))
 
-	def get_all_patterns(self, channel_id: int) -> list[ForumPatterns] :
+	def get_patterns_by_type(self, channel_id: int, pattern_type: str) -> list[ForumPatterns] :
 		with self.createsession() as session:
+			return session.scalars(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id, ForumPatterns.action == pattern_type)).all()
+
+	def get_all_patterns(self, channel_id: int, exclude_blacklist = False) -> list[ForumPatterns] :
+		with self.createsession() as session:
+			if exclude_blacklist:
+				return session.scalars(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id, ForumPatterns.action != FP.blacklist)).all()
 			return session.scalars(select(ForumPatterns).where(ForumPatterns.forum_id == channel_id)).all()
 
 	def count_patterns(self, channel_id: int) -> int :

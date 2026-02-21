@@ -9,7 +9,7 @@ class ForumSelect(discord.ui.View) :
 		super().__init__(timeout=timeout)
 		self.selected_channels = []
 
-	@discord.ui.select(cls=ChannelSelect, channel_types=[discord.ChannelType.forum], min_values=1, max_values=10,
+	@discord.ui.select(cls=ChannelSelect, channel_types=[discord.ChannelType.forum], min_values=1, max_values=None,
 	                   placeholder="Select your forum channels here")
 	async def select_channels(self, interaction: discord.Interaction, select: ChannelSelect) :
 		self.selected_channels = select.values

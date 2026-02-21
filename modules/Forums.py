@@ -1,5 +1,5 @@
 import logging
-import re
+import re2 as re
 
 import discord
 
@@ -13,6 +13,7 @@ from classes.discordcontrollers.forum.ForumPatternController import ForumPattern
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.queue import Queue
 from classes.support.regex import verify_regex_length, verify_regex_pattern
+from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 
@@ -45,7 +46,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = ForumController.select_forums(interaction, "Select your forum channel(s) to add")
+		forums = await ForumController.select_forums(interaction, "Select your forum channel(s) to add")
 		for forum in forums :
 			ForumTransactions().add(
 				channel_id=forum.id,
@@ -74,8 +75,9 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 	@app_commands.choices(
 		operation=OPERATION_CHOICES,
 		action=[
-			Choice(name="Delete Thread", value="block"),
-			Choice(name="Warn staff", value="warn"),
+			Choice(name="Delete", value=ForumPatterns.block),
+			Choice(name="Warn", value=ForumPatterns.warn),
+			Choice(name="Required", value=ForumPatterns.required),
 		],
 	)
 	@AccessControl().check_premium()
@@ -102,18 +104,17 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				valid_length = verify_regex_length(pattern)
 				if not valid_length:
 					await send_response(interaction, f"The provided pattern is too long ({REGEX_MAX_LIMIT}) or too short ({REGEX_MIN_LIMIT})", ephemeral=True)
-
+				pattern = f"({pattern})"
 				valid_pattern = verify_regex_pattern(pattern)
 				if not valid_pattern:
 					await send_response(interaction,
 					                    "The provided pattern is not a valid regex pattern. Please check your pattern and try again.",
 					                    ephemeral=True)
-				logging.info(valid_pattern)
 
 				for forum in forums :
 					result = await controller.add_pattern(interaction, forum, name, pattern, action.value.upper())
 					if result is not None :
-						return
+						continue
 					success += 1
 
 				await send_response(interaction, f"Added pattern to {success} forum channel(s).", ephemeral=True)
@@ -130,7 +131,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 					# Expecting a removal method on ForumTransactions; adjust if your API differs.
 					result = await controller.remove_pattern(interaction, forum, name)
 					if result is not None :
-						return
+						continue
 					success += 1
 
 				await send_response(interaction, f"Removed pattern from {success} forum channel(s).", ephemeral=True)
@@ -146,9 +147,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				return
 
 	@app_commands.command(name="blacklist_word", description="Adds/Removes a word to the forum blacklist [simple]")
-	@app_commands.choices(operation=[
-
-	])
+	@app_commands.choices(operation=OPERATION_CHOICES)
 	@app_commands.checks.has_permissions(manage_guild=True)
 	async def blacklist_word(self, interaction: discord.Interaction, operation: Choice[str], word: str) :
 		"""
@@ -165,15 +164,15 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			match operation.value.lower() :
 
 				case "add" :
-					result = await blacklist.add_pattern(interaction, forum, word, word, action="BLACKLIST")
+					result = await blacklist.add_pattern(interaction, forum, word, word, action=ForumPatterns.blacklist)
 					if result is not None :
-						return
+						continue
 					success += 1
 
 				case "remove" :
 					result = await blacklist.remove_pattern(interaction, forum, word)
 					if result is not None :
-						return
+						continue
 					success += 1
 				case "list" :
 					words = ForumTransactions().get_all_patterns(forum.id)
@@ -184,6 +183,49 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			return
 		await send_response(interaction,
 		                    f"{operation.name}ed the word `{word}` {'to' if operation.value == 'add' else 'from'} the blacklist for {len(forums)} forum channel(s).",
+		                    ephemeral=True)
+
+	@app_commands.command(name="minimum_characters", description="Sets the minimum character requirement for threads in the selected forums")
+	@app_commands.choices(operation=OPERATION_CHOICES)
+	@app_commands.checks.has_permissions(manage_guild=True)
+	async def character_count(self, interaction: discord.Interaction, operation: Choice[str], character_count: int) :
+		"""
+		Adds/Removes a minimum character requirement for threads in the selected forums.
+
+		Permissions:
+		- Manage guild
+		"""
+		forums = await ForumController.select_forums(interaction,
+		                                             f"Select your forum channel(s) to {operation.value} a minimum character requirement of `{character_count}`!")
+		blacklist = ForumPatternController(interaction.guild.id)
+		success = 0
+
+		for forum in forums :
+			match operation.value.lower() :
+
+				case "add" :
+					result = blacklist.check_forum_in_config(forum.id)
+					if not result :
+						continue
+					ForumTransactions().update(forum.id, minimum_characters=character_count)
+
+					success += 1
+
+				case "remove" :
+					result = blacklist.check_forum_in_config(forum.id)
+					if result is not None :
+						continue
+					ForumTransactions().update(forum.id, minimum_characters=0)
+					success += 1
+				case "list" :
+					forum_conf = ForumTransactions().get(forum.id)
+					await send_response(interaction, f"Minimum character count for {forum.name}: {forum_conf.minimum_characters}", ephemeral=True)
+
+
+		if operation.value.lower() == "list" :
+			return
+		await send_response(interaction,
+		                    f"{operation.name}ed a minimum character requirement of `{character_count}` {'to' if operation.value == 'add' else 'removed from'} the selected forums for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
 	@app_commands.command(name='stats')
@@ -253,6 +295,8 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 	# - Prevent duplicates (Local, global, off)
 	# - Thread log
 
+
+	# TODO: upgrade this command to work with archived threads and add an option to notify the thread starter with the contents of their thread before purging, as well as a confirmation button to prevent accidental purges AND add the option to create an export of each purged thread.
 	@app_commands.command(name="purge")
 	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
 		"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""

@@ -65,5 +65,5 @@ class Servers:
 				print(f"Server {server_id} updated successfully: {result}")
 			logging.info(f"{len(guilds)} Servers updated")
 		except Exception as e:
-			logging.warning(f"Error updating server {[g.guild for g in guilds]}: {e}", exc_info=True)
+			logging.warning(f"Error updating server {[g.id for g in guilds]}: {e}", exc_info=True)
 

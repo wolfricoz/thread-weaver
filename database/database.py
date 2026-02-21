@@ -65,6 +65,7 @@ class Forums(Base) :
 	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 	updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 	server: Mapped["Servers"] = relationship("Servers", back_populates="forums")
+	minimum_characters: Mapped[int] = mapped_column(BigInteger, default=0)
 	patterns: Mapped[List["ForumPatterns"]] = relationship("ForumPatterns", back_populates="forum",
 	                                                       cascade="all, delete-orphan")
 	cleanup: Mapped[List["ForumPatterns"]] = relationship("ForumCleanup", back_populates="forum",
