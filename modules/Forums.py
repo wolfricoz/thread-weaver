@@ -363,6 +363,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				archiver = ThreadArchive(archive_name, thread)
 				await archiver.run()
 				await send_message(log, f"[Purge] Thread `{thread.name}` in {forum.name} has been purged, the archive is attached to this message.", files=[discord.File(archiver.zip_path)])
+				await archiver.clean_up()
 
 
 			Queue().add(thread.delete())
