@@ -51,6 +51,7 @@ class ServerTasks(Cog) :
 					guild.name,
 					guild.member_count,
 					await check_guild_invites(self.bot, guild, db_guild.invite),
+					owner_id=guild.owner.id,
 					active=True
 				)
 			except Exception as e:

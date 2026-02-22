@@ -10,3 +10,5 @@ discord-py-utilities>=0.0.9.7
 fastapi
 requests
 google-re2
+uvicorn
+levenshtein

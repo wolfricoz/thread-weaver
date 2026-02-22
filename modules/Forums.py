@@ -11,10 +11,13 @@ from discord_py_utilities.messages import send_message, send_response
 from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.kernel.AccessControl import AccessControl
+from classes.kernel.ConfigData import ConfigData
 from classes.kernel.queue import Queue
+from classes.support.ThreadArchive import ThreadArchive
 from classes.support.regex import verify_regex_length, verify_regex_pattern
 from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions
+from resources.configs.ConfigMapping import ConfigMapping
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 from views.buttons.ConfirmButtons import ConfirmButtons
 
@@ -23,6 +26,7 @@ OPERATION_CHOICES = [
 	Choice(name="Remove", value="remove"),
 	Choice(name="List", value="list"),
 ]
+
 
 # placeholder
 class ForumTasks :
@@ -104,11 +108,13 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 					return
 
 				valid_length = verify_regex_length(pattern)
-				if not valid_length:
-					await send_response(interaction, f"The provided pattern is too long ({REGEX_MAX_LIMIT}) or too short ({REGEX_MIN_LIMIT})", ephemeral=True)
+				if not valid_length :
+					await send_response(interaction,
+					                    f"The provided pattern is too long ({REGEX_MAX_LIMIT}) or too short ({REGEX_MIN_LIMIT})",
+					                    ephemeral=True)
 				pattern = f"({pattern})"
 				valid_pattern = verify_regex_pattern(pattern)
-				if not valid_pattern:
+				if not valid_pattern :
 					await send_response(interaction,
 					                    "The provided pattern is not a valid regex pattern. Please check your pattern and try again.",
 					                    ephemeral=True)
@@ -187,7 +193,8 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    f"{operation.name}ed the word `{word}` {'to' if operation.value == 'add' else 'from'} the blacklist for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
-	@app_commands.command(name="minimum_characters", description="Sets the minimum character requirement for threads in the selected forums")
+	@app_commands.command(name="minimum_characters",
+	                      description="Sets the minimum character requirement for threads in the selected forums")
 	@app_commands.choices(operation=OPERATION_CHOICES)
 	@app_commands.checks.has_permissions(manage_guild=True)
 	async def character_count(self, interaction: discord.Interaction, operation: Choice[str], character_count: int) :
@@ -221,8 +228,8 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 					success += 1
 				case "list" :
 					forum_conf = ForumTransactions().get(forum.id)
-					await send_response(interaction, f"Minimum character count for {forum.name}: {forum_conf.minimum_characters}", ephemeral=True)
-
+					await send_response(interaction, f"Minimum character count for {forum.name}: {forum_conf.minimum_characters}",
+					                    ephemeral=True)
 
 		if operation.value.lower() == "list" :
 			return
@@ -230,9 +237,10 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    f"{operation.name}ed a minimum character requirement of `{character_count}` {'to' if operation.value == 'add' else 'removed from'} the selected forums for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
-	@app_commands.command(name="duplicates", description="Sets the minimum character requirement for threads in the selected forums")
+	@app_commands.command(name="duplicates",
+	                      description="Sets the minimum character requirement for threads in the selected forums")
 	@app_commands.checks.has_permissions(manage_guild=True)
-	async def character_count(self, interaction: discord.Interaction, allow:bool = True) :
+	async def character_count(self, interaction: discord.Interaction, allow: bool = True) :
 		"""
 		Allow or disallow duplicate threads in the selected forums. Duplicate threads are threads with the same starter message content. This is determined on a user basis, so different users can create threads with the same content without being considered duplicates.
 
@@ -251,7 +259,6 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			ForumTransactions().update(forum.id, duplicates=allow)
 
 			success += 1
-
 
 		await send_response(interaction,
 		                    f"{'Allowed' if allow else 'Disallowed'} duplicate threads in the selected forums for {len(forums)} forum channel(s).",
@@ -321,12 +328,19 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			ForumTransactions().add(forum.id, interaction.user.id, forum.name)
 		await send_response(interaction, f"Successfully added all forums to {interaction.user.name}!")
 
-
 	# TODO: upgrade this command to work with archived threads and add an option to notify the thread starter with the contents of their thread before purging, as well as a confirmation button to prevent accidental purges AND add the option to create an export of each purged thread.
 	@app_commands.command(name="purge")
-	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
+	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = True,
+	                archive: bool = False) :
 		"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""
-		await ConfirmButtons().send_confirmation(interaction, f"Are you sure you want to purge all threads in `{forum.name}`? This action cannot be undone.")
+		await ConfirmButtons().send_confirmation(interaction,
+		                                         f"Are you sure you want to purge all threads in `{forum.name}`? This action cannot be undone.")
+		log = await ConfigData().get_channel(interaction.guild, ConfigMapping.AUTOMOD_LOG)
+		if archive and not AccessControl().is_premium(interaction.guild.id) :
+			await send_response(interaction,
+			                    "Archiving threads is a premium feature. Please upgrade to use this feature. Cancelling purge!",
+			                    ephemeral=True)
+			return
 
 		await send_response(interaction, f"Purge all threads in {forum.name}", ephemeral=True)
 		for thread in forum.threads :
@@ -344,11 +358,21 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				Queue().add(send_message(thread.owner,
 				                         f"Your thread {thread.name} in {forum.name} is being purged, here are the contents:"
 				                         f"\ntitle: {thread.name}\ncontent: {starter_msg.content}"), priority=2)
+				if archive:
+					archive_name = f"{interaction.guild.name}_{thread.name}"
+					archiver = ThreadArchive(archive_name, thread)
+					await archiver.run()
+					await send_message(log, f"[Purge] Thread {thread.name} in {forum.name} has been purged, the archive is attached to this message.", files=discord.File(archiver.zip_path))
+
+
 			Queue().add(thread.delete())
 		else :
 			Queue().add(send_message(interaction.channel, f"Purge complete for {forum.name}"), 0)
 		Queue().add(send_message(interaction.channel, f"Queueing purge of {len(forum.threads)} threads in {forum.name}."),
 		            priority=2)
+
+
+
 
 
 async def setup(bot: Bot) :
