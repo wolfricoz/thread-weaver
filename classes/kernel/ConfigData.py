@@ -118,7 +118,7 @@ class ConfigData(metaclass=Singleton) :
 		return self.get_key(serverid, key)
 
 
-	async def get_channel(self, guild: discord.Guild, channel_type: str = "modchannel") -> None | VoiceChannel | StageChannel | ForumChannel | TextChannel | CategoryChannel | Thread :
+	async def get_channel(self, guild: discord.Guild, channel_type: str = "modchannel", optional = False) -> None | VoiceChannel | StageChannel | ForumChannel | TextChannel | CategoryChannel | Thread :
 		"""Gets the channel from the Config"""
 		channel_id = self.get_key_or_none(guild.id, channel_type)
 		if not isinstance(channel_id, int) :
@@ -132,6 +132,8 @@ class ConfigData(metaclass=Singleton) :
 			channel = find_first_accessible_text_channel(guild)
 			if channel is None:
 				channel = guild.owner
+			if optional:
+				return None
 			await send_message(channel,
 			                   f"No `{channel_type}` channel set for {guild.name}, please set it up using the /Config command")
 			return None

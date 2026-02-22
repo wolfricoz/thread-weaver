@@ -12,7 +12,9 @@ class ConfigMapping(StrEnum):
 
 	# == automod ==
 	AUTOMOD_LOG = "AUTOMOD_LOG"
+	AUTOMOD_WARN_LOG = "AUTOMOD_WARN_LOG"
 
 channels = [
-	ConfigMapping.AUTOMOD_LOG
+	ConfigMapping.AUTOMOD_LOG,
+	ConfigMapping.AUTOMOD_WARN_LOG,
 ]
