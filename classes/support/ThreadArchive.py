@@ -80,7 +80,7 @@ class ThreadArchive():
 				else :
 					# If the attachment is not an image, we will just add a link to it.
 					html += f"<p><a href='{attachment.url}' target='_blank'>{attachment.filename}</a></p>"
-			html += '</div></div><hr>'
+				html += '</div></div><hr>'
 
 		# close the html tags
 		html += f"</body></html>"
