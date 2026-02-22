@@ -16,6 +16,7 @@ from classes.support.regex import verify_regex_length, verify_regex_pattern
 from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
+from views.buttons.ConfirmButtons import ConfirmButtons
 
 OPERATION_CHOICES = [
 	Choice(name="Add", value="add"),
@@ -88,6 +89,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 
 		Permissions:
 		- Manage guild
+		- Premium access
 		"""
 		success = 0
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
@@ -228,6 +230,33 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    f"{operation.name}ed a minimum character requirement of `{character_count}` {'to' if operation.value == 'add' else 'removed from'} the selected forums for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
+	@app_commands.command(name="duplicates", description="Sets the minimum character requirement for threads in the selected forums")
+	@app_commands.checks.has_permissions(manage_guild=True)
+	async def character_count(self, interaction: discord.Interaction, allow:bool = True) :
+		"""
+		Allow or disallow duplicate threads in the selected forums. Duplicate threads are threads with the same starter message content. This is determined on a user basis, so different users can create threads with the same content without being considered duplicates.
+
+		Permissions:
+		- Manage guild
+		"""
+		forums = await ForumController.select_forums(interaction,
+		                                             f"Select your forum channel(s) to {'allow' if allow else 'disallow'} duplicate threads!")
+		blacklist = ForumPatternController(interaction.guild.id)
+		success = 0
+
+		for forum in forums :
+			result = blacklist.check_forum_in_config(forum.id)
+			if not result :
+				continue
+			ForumTransactions().update(forum.id, duplicates=allow)
+
+			success += 1
+
+
+		await send_response(interaction,
+		                    f"{'Allowed' if allow else 'Disallowed'} duplicate threads in the selected forums for {len(forums)} forum channel(s).",
+		                    ephemeral=True)
+
 	@app_commands.command(name='stats')
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def stats(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
@@ -267,6 +296,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			forum = ForumTasks(channel, self.bot)
 			Queue().add(forum.start())
 
+	# TODO: Also copy over configurations like patterns, minimum character count, etc.
 	@app_commands.command(name="copy", description="Copy a forum with all settings!")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def copy(self, interaction: discord.Interaction, forum: discord.ForumChannel, name: str = None) :
@@ -291,15 +321,13 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			ForumTransactions().add(forum.id, interaction.user.id, forum.name)
 		await send_response(interaction, f"Successfully added all forums to {interaction.user.name}!")
 
-	# Config here:
-	# - Prevent duplicates (Local, global, off)
-	# - Thread log
-
 
 	# TODO: upgrade this command to work with archived threads and add an option to notify the thread starter with the contents of their thread before purging, as well as a confirmation button to prevent accidental purges AND add the option to create an export of each purged thread.
 	@app_commands.command(name="purge")
 	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = False) :
 		"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""
+		await ConfirmButtons().send_confirmation(interaction, f"Are you sure you want to purge all threads in `{forum.name}`? This action cannot be undone.")
+
 		await send_response(interaction, f"Purge all threads in {forum.name}", ephemeral=True)
 		for thread in forum.threads :
 			if notify_user :

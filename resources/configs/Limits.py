@@ -6,5 +6,5 @@ FREE_BLACKLIST_WORD_LIMIT = 15
 
 
 # Controls the max size of a regex.
-REGEX_MAX_LIMIT = 155
+REGEX_MAX_LIMIT = 100
 REGEX_MIN_LIMIT = 5

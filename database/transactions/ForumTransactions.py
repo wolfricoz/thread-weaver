@@ -24,14 +24,15 @@ class ForumTransactions(DatabaseTransactions):
 			self.commit(session)
 			return forum
 
-	def update(self, channel_id: int, name: str = None, minimum_characters: int = None) -> Forums | None :
+	def update(self, channel_id: int, name: str = None, minimum_characters: int = None, duplicates:bool = None) -> Forums | None :
 		with self.createsession() as session:
 			forum = self.get(channel_id)
 			if forum is None :
 				return None
 			available_fields = {
 				"name": name,
-				"minimum_characters": minimum_characters
+				"minimum_characters": minimum_characters,
+				"duplicates": duplicates
 			}
 			for key, value in available_fields.items():
 				if value is not None:
