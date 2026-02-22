@@ -358,11 +358,11 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				Queue().add(send_message(thread.owner,
 				                         f"Your thread {thread.name} in {forum.name} is being purged, here are the contents:"
 				                         f"\ntitle: {thread.name}\ncontent: {starter_msg.content}"), priority=2)
-				if archive:
-					archive_name = f"{interaction.guild.name}_{thread.name}"
-					archiver = ThreadArchive(archive_name, thread)
-					await archiver.run()
-					await send_message(log, f"[Purge] Thread {thread.name} in {forum.name} has been purged, the archive is attached to this message.", files=discord.File(archiver.zip_path))
+			if archive:
+				archive_name = f"{interaction.guild.name}_{thread.name}"
+				archiver = ThreadArchive(archive_name, thread)
+				await archiver.run()
+				await send_message(log, f"[Purge] Thread `{thread.name}` in {forum.name} has been purged, the archive is attached to this message.", files=[discord.File(archiver.zip_path)])
 
 
 			Queue().add(thread.delete())
