@@ -1,0 +1,23 @@
+{
+    "left": "Toggle the removal of threads from users that left. Disabled by default",
+    "old": "Toggle the removal of threads after a x amount of days per forum. Disabled by default",
+    "regex": "Toggle the removal of threads after a x amount of days per forum. Disabled by default",
+    "channel": "Channel configuration for Forum Manager. This command allows you to set the channels used by the bot for various features. For example, you can set the channel where the bot will log automod actions.\n\n**Permissions:**\n- `Manage Server`",
+    "reload_env": "Reloads the environment variables from the .env file.",
+    "add_staff": "[DEV] Adds a user to the Banwatch staff with a specified role.\n\n**Permissions:**\n- `Bot Owner`",
+    "quit": "[DEV] Shuts down the bot.\n\n**Permissions:**\n- `Bot Owner`",
+    "remove_staff": "[DEV] Removes a user from the Banwatch staff.\n\n**Permissions:**\n- `Developer`",
+    "thread": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "forum": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "add": "Adds the chosen forum channel for the bot, enabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
+    "remove": "Removes the chosen forum channel from the bot's database, disabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
+    "add_pattern": "Add / Remove / List patterns for forum threads.\n\nPermissions:\n- Manage guild\n- Premium access",
+    "blacklist_word": "Adds/Removes a word to the forum blacklist [simple]\n\nPermissions:\n- Manage guild",
+    "character_count": "Adds/Removes a minimum character requirement for threads in the selected forums.\n\nPermissions:\n- Manage guild",
+    "duplicates": "Allow or disallow duplicate threads in the selected forums. Duplicate threads are threads with the same starter message content. This is determined on a user basis, so different users can create threads with the same content without being considered duplicates.\n\nPermissions:\n- Manage guild\n- Premium access",
+    "stats": "Get stats for a forum",
+    "recover": "Recover archived posts",
+    "copy": "Copy a forum with all settings!",
+    "add_all": "Missing Documentation",
+    "purge": "Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."
+}
