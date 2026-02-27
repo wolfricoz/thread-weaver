@@ -42,6 +42,10 @@ For example:
 
 > Toggle the removal of threads from users that left. Disabled by default
 
+Permissions:
+- Manage guild
+- Premium access
+
 ---
 
 ### `old`
@@ -50,13 +54,21 @@ For example:
 
 > Toggle the removal of threads after a x amount of days per forum. Disabled by default
 
+Permissions:
+- Manage guild
+- Premium access
+
 ---
 
 ### `regex`
 
 **Usage:** `/cleanup regex <operation> <pattern> <days>`
 
-> Toggle the removal of threads after a x amount of days per forum. Disabled by default
+> Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.
+
+Permissions:
+- Manage guild
+- Premium access
 
 ---
 
