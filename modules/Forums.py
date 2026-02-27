@@ -8,6 +8,7 @@ from discord.app_commands import Choice
 from discord.ext.commands import Bot, GroupCog
 from discord_py_utilities.messages import send_message, send_response
 
+from classes.discordcontrollers.forum.AutoMod import AutoMod, AutoModActions
 from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.kernel.AccessControl import AccessControl
@@ -58,6 +59,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 				server_id=interaction.guild.id,
 				name=forum.name,
 			)
+		AutoMod().clear_cache()
 		await interaction.followup.send(f"Added {len(forums)} forum channel(s) to the database.", ephemeral=True)
 
 	@app_commands.command(name="remove", description="Removes the chosen forum channel for the bot")
@@ -73,6 +75,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		forums = await ForumController.select_forums(interaction, "Select your forum channel(s) to remove")
 		for forum in forums :
 			ForumTransactions().delete(forum.id)
+		AutoMod().clear_cache()
 		await send_response(interaction, f"Removed {len(forums)} forum channel(s) from the database.", ephemeral=True)
 
 	@app_commands.command(name="patterns", description="Adds/removes/lists patterns for forum threads (regex)")

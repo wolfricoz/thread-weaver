@@ -53,8 +53,8 @@ class AutoMod(metaclass=Singleton) :
 		if not forum or not thread :
 			return
 
-		# action = self.is_staff(message.author)
-		logging.info(f"staff check disabled")
+		action = self.is_staff(message.author)
+		# logging.info(f"staff check disabled")
 		# check simple blacklist first, as this is the least resource intensive check, and if it hits, we can skip the more resource intensive regex checks.
 
 		if not action :

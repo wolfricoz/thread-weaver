@@ -27,12 +27,14 @@ class ThreadAutoMod(Cog) :
 	@Cog.listener('on_message_update')
 	async def on_message_update(self, before, after) :
 		"""This event is triggered when a message is updated."""
-		pass
+		await AutoMod().run(after)
+
 
 	@Cog.listener('on_message')
 	async def on_message(self, message) :
 		"""This event is triggered when a message is created."""
-		pass
+		await AutoMod().run(message)
+
 
 
 	async def fetch_message(self, thread: discord.Thread) -> discord.Message | None:
