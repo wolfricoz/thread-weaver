@@ -49,9 +49,10 @@ class AutoMod(metaclass=Singleton) :
 		reason = ""
 		thread = message.channel
 		forum = self.is_enabled(thread)
-		premium_status = AccessControl().is_premium(forum.guild.id)
 		if not forum or not thread :
 			return
+		premium_status = AccessControl().is_premium(forum.guild.id)
+
 
 		action = self.is_staff(message.author)
 		# logging.info(f"staff check disabled")
