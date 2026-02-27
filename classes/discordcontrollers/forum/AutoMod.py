@@ -49,6 +49,7 @@ class AutoMod(metaclass=Singleton) :
 		reason = ""
 		thread = message.channel
 		forum = self.is_enabled(thread)
+		premium_status = AccessControl().is_premium(forum.guild.id)
 		if not forum or not thread :
 			return
 
@@ -57,26 +58,20 @@ class AutoMod(metaclass=Singleton) :
 		# check simple blacklist first, as this is the least resource intensive check, and if it hits, we can skip the more resource intensive regex checks.
 
 		if not action :
-			action, reason = await self.check_duplicate(message, thread, forum)
-
-		if not action :
 			action, reason = self.check_min_length(message, forum)
-
 		if not action :
 			action, reason = self.check_blacklist(message, forum)
-
 		# Blocks defined pattern
-		if not action and AccessControl().is_premium(forum.guild.id) :
-			# logging.info(f"checking block patterns for {message.content}")
+		if not action and premium_status :
 			action, reason = self.check_patterns(message.content, forum, ForumPatterns.block)
 		# sends a warning when detected, but allows the message to go through.
-		if not action and AccessControl().is_premium(forum.guild.id) :
-			# logging.info(f"checking warn patterns for {message.content}")
+		if not action and premium_status :
 			action, reason = self.check_patterns(message.content, forum, ForumPatterns.warn)
 		# requires a pattern to be included in the message, if not, the message is blocked. Only checks the first message of the thread.
-		if not action and AccessControl().is_premium(forum.guild.id) and message.id == thread.id :
-			# logging.info(f"checking required patterns for {message.content}")
+		if not action and premium_status and message.id == thread.id :
 			action, reason = self.check_required_patterns(message.content, forum)
+		if not action and premium_status:
+			action, reason = await self.check_duplicate(message, thread, forum)
 		# the final judgement
 		logging.info(f"final action: {action}, reason: {reason}")
 		await self.check_action(message, thread, forum, action, reason)

@@ -240,12 +240,14 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 	@app_commands.command(name="duplicates",
 	                      description="Sets the minimum character requirement for threads in the selected forums")
 	@app_commands.checks.has_permissions(manage_guild=True)
-	async def character_count(self, interaction: discord.Interaction, allow: bool = True) :
+	@AccessControl().check_premium()
+	async def duplicates(self, interaction: discord.Interaction, allow:bool = True) :
 		"""
 		Allow or disallow duplicate threads in the selected forums. Duplicate threads are threads with the same starter message content. This is determined on a user basis, so different users can create threads with the same content without being considered duplicates.
 
 		Permissions:
 		- Manage guild
+		- Premium access
 		"""
 		forums = await ForumController.select_forums(interaction,
 		                                             f"Select your forum channel(s) to {'allow' if allow else 'disallow'} duplicate threads!")
