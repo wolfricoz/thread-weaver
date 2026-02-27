@@ -3,6 +3,8 @@ import logging
 from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
+from classes.discordcontrollers.forum.AutoMod import AutoMod
+
 
 class ForumTask(Cog) :
 
@@ -25,11 +27,18 @@ class ForumTask(Cog) :
 		# You can add your periodic task logic here.
 		# - For example, checking for updates, sending reminders, etc.
 
+	@tasks.loop(hours=1)
+	async def clear_cache(self):
+		logging.info("Clearing automod cache...")
+		AutoMod().clear_cache()
+
 
 	@check_forums_task.before_loop
-	async def before_sample_task(self) :
+	async def before_check_task(self) :
 		# Wait until the bot is ready before starting the task
 		await self.bot.wait_until_ready()
+
+
 
 async def setup(bot: Bot) :
 	await bot.add_cog(

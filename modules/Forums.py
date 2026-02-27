@@ -289,6 +289,8 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			embed.add_field(name=key, value=value, inline=False)
 		await send_message(interaction.channel, embed=embed)
 
+
+	# TODO: This command needs to be fixed.
 	@app_commands.command(name="recover", description="Recover archived posts")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def recover(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
