@@ -14,7 +14,18 @@ class ConfigMapping(StrEnum):
 	AUTOMOD_LOG = "AUTOMOD_LOG"
 	AUTOMOD_WARN_LOG = "AUTOMOD_WARN_LOG"
 
+	# == cleanup ==
+	CLEANUP_ENABLED = "CLEANUP_ENABLED"
+
+	# == restore threads ==
+	RESTORE_ARCHIVED = "RESTORE_ARCHIVED"
+
 channels = [
 	ConfigMapping.AUTOMOD_LOG,
 	ConfigMapping.AUTOMOD_WARN_LOG,
+]
+
+toggles = [
+	ConfigMapping.CLEANUP_ENABLED,
+	ConfigMapping.RESTORE_ARCHIVED
 ]
