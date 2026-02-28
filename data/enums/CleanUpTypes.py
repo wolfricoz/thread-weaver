@@ -1,0 +1,8 @@
+from enum import StrEnum
+
+
+class CleanUpTypes(StrEnum):
+	ABANDONED = "CLEANUPLEFT"
+	OLD = "CLEANUPDAYS"
+	REGEX = "CLEANUPREGEX"
+	MISSING = "CLEANUPMISSING"
