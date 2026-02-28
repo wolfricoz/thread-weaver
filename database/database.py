@@ -69,8 +69,8 @@ class Forums(Base) :
 	duplicates: Mapped[bool] = mapped_column(Boolean, default=True)
 	patterns: Mapped[List["ForumPatterns"]] = relationship("ForumPatterns", back_populates="forum",
 	                                                       cascade="all, delete-orphan")
-	cleanup: Mapped[List["ForumPatterns"]] = relationship("ForumCleanup", back_populates="forum",
-	                                                       cascade="all, delete-orphan")
+	cleanup: Mapped[List["ForumCleanup"]] = relationship("ForumCleanup", back_populates="forum",
+	                                                       cascade="all, delete-orphan", lazy="joined")
 
 
 class ForumPatterns(Base) :

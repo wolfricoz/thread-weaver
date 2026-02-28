@@ -9,6 +9,7 @@ from classes.discordcontrollers.forum.ForumPatternController import ForumPattern
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
 from classes.support.regex import verify_regex_length, verify_regex_pattern
+from data.enums.CleanUpTypes import CleanUpTypes
 from database.transactions.ForumCleanupTransactions import ForumCleanupTransactions
 from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.ConfigMapping import ConfigMapping
@@ -30,7 +31,7 @@ class CleanUp(GroupCog, name="cleanup") :
 	@app_commands.checks.has_permissions(manage_channels=True)
 	@app_commands.choices(operation=OPERATION_CHOICES)
 	@AccessControl().check_premium()
-	async def left(self, interaction: discord.Interaction, operation: Choice['str']) :
+	async def abandoned(self, interaction: discord.Interaction, operation: Choice['str']) :
 		"""Toggle the removal of threads from users that left. Disabled by default
 
 		Permissions:
@@ -40,7 +41,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
 			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
 
-		_key = "CLEANUPLEFT"
+		_key = CleanUpTypes.ABANDONED
 		if operation.value.lower() == "list" :
 			forums = ForumTransactions().get_all(interaction.guild.id)
 			formatted_message = "Forum's with abandoned post cleanup:\n"
@@ -92,7 +93,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		"""
 		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
 			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
-		_key = "CLEANUPDAYS"
+		_key = CleanUpTypes.OLD
 		forums = []
 		if not operation.value.lower() == "list" :
 			forums = await ForumController.select_forums(interaction,
@@ -160,7 +161,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		"""
 		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
 			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
-		_key = "CLEANUPREGEX"
+		_key = CleanUpTypes.REGEX
 		forums = []
 		if not operation.value.lower() == "list" :
 			forums = await ForumController.select_forums(interaction,
@@ -225,6 +226,59 @@ class CleanUp(GroupCog, name="cleanup") :
 					formatted_message += f"- {forum.name}: {result.days}\n"
 				await send_response(interaction, formatted_message, ephemeral=True)
 				return None
+		return None
+
+	@app_commands.command(name="missing_starter",
+	                      description=f"Toggle the removal of threads with a missing starter message. Disabled by default")
+	@app_commands.checks.has_permissions(manage_channels=True)
+	@app_commands.choices(operation=OPERATION_CHOICES)
+	@AccessControl().check_premium()
+	async def missing_starter(self, interaction: discord.Interaction, operation: Choice['str']) :
+		"""Toggle the removal of threads with missing starter message. Disabled by default
+
+		Permissions:
+		- Manage guild
+		- Premium access
+		"""
+		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED") :
+			return await send_response(interaction,
+			                           f"Your server does not have clean-up enabled! No changes have been made to the config.")
+
+		_key = CleanUpTypes.MISSING
+		if operation.value.lower() == "list" :
+			forums = ForumTransactions().get_all(interaction.guild.id)
+			formatted_message = "Forum's with missing post cleanup:\n"
+			for forum in forums :
+				result = ForumCleanupTransactions().get(forum.id, _key)
+				if not result :
+					continue
+				formatted_message += f"- {forum.name}\n"
+
+		forums = await ForumController.select_forums(interaction,
+		                                             f"Please select the forum channel(s) where you want to {operation.value} cleanup of posts that have a missing starter message:")
+		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
+
+		# Process:
+		# If the key exists, the forum is cleanup; if the key is removed then the forum is not clean-up.
+		success = []
+		_state = ""
+		for forum in forums :
+			match operation.value.lower() :
+				case "add" :
+					if not controller.check_forum_in_config(forum.id) :
+						return await send_message(interaction.channel,
+						                          f"{forum.name} is not registered as a forum channel. Please add it first using `/forum add`.")
+					ForumCleanupTransactions().add(forum.id, _key)
+					success.append(forum)
+					_state = "enabled"
+				case "remove" :
+					ForumCleanupTransactions().delete(forum.id, _key)
+					success.append(forum)
+					_state = "disabled"
+
+		await send_response(interaction,
+		                    f"Abandoned post cleanup is now {_state} in {', '.join([forum.name for forum in success])}",
+		                    ephemeral=True)
 		return None
 
 

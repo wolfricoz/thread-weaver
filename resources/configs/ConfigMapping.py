@@ -16,6 +16,7 @@ class ConfigMapping(StrEnum):
 
 	# == cleanup ==
 	CLEANUP_ENABLED = "CLEANUP_ENABLED"
+	CLEANUP_LOG = "CLEANUP_LOG"
 
 	# == restore threads ==
 	RESTORE_ARCHIVED = "RESTORE_ARCHIVED"
@@ -23,9 +24,10 @@ class ConfigMapping(StrEnum):
 channels = [
 	ConfigMapping.AUTOMOD_LOG,
 	ConfigMapping.AUTOMOD_WARN_LOG,
+	ConfigMapping.CLEANUP_LOG
 ]
 
 toggles = [
 	ConfigMapping.CLEANUP_ENABLED,
-	ConfigMapping.RESTORE_ARCHIVED
+	ConfigMapping.RESTORE_ARCHIVED,
 ]

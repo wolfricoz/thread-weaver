@@ -1,9 +1,13 @@
 import logging
 
+import discord
 from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
 from classes.discordcontrollers.forum.AutoMod import AutoMod
+from classes.discordcontrollers.forum.ForumTaskActions import ForumTask as ForumManager
+from classes.kernel.queue import Queue
+from database.transactions.ForumTransactions import ForumTransactions
 
 
 class ForumTask(Cog) :
@@ -23,9 +27,14 @@ class ForumTask(Cog) :
 	@tasks.loop(hours=1)
 	async def check_forums_task(self) :
 		# This is a sample task that runs every 30 minutes.
-		logging.info("Sample task is running...")
-		# You can add your periodic task logic here.
-		# - For example, checking for updates, sending reminders, etc.
+		for guild in  self.bot.guilds:
+			forum_configs = ForumTransactions().get_all(guild.id)
+			for forum_config in forum_configs :
+				f = guild.get_channel(forum_config.id)
+				if f is None or not isinstance(f, discord.ForumChannel):
+					continue
+				forum_manager = ForumManager(f, forum_config, self.bot)
+				Queue().add(forum_manager.start(), 0)
 
 	@tasks.loop(hours=1)
 	async def clear_cache(self):

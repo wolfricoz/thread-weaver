@@ -111,7 +111,22 @@ class ConfigData(metaclass=Singleton) :
 
 		return default
 
+	def get_toggle(self, guildid: int, key: str, expected: str = "ENABLED", default: str = "DISABLED") -> bool :
+		"""
+		:param guildid:
+		:param key:
+		:param expected:
+		:param default:
+		:return:
+		"""
+		value = str(self.get_key(guildid, key, default)).upper()
 
+		# Due the database field being a string, it allows for multiple ways to represent enabled/disabled. In legacy we used ENABLED/DISABLED but we're slowly moving to TRUE/FALSE; to ensure backwards compatibility we check for all options we check for all options here.
+		if value in ["ENABLED", "TRUE", "1", "ON"] :
+			return expected.upper() == "ENABLED"
+		if value in ["DISABLED", "FALSE", "0", "OFF"] :
+			return expected.upper() == "DISABLED"
+		return value == expected.upper()
 
 	def get_key_or_none(self, serverid, key) :
 		"""Gets a key from the Config, returns None if not found"""

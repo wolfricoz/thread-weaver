@@ -106,7 +106,6 @@ class AutoMod(metaclass=Singleton) :
 				return AutoModActions.BLOCK, f"Your message contains a blacklisted word: `{word.pattern}`"
 		return None, None
 
-	# TODO: Perhaps separate required patterns from this, it flexes the scope of this function a bit too much, and it would be cleaner to have a separate function for required patterns to provide a specific message with the regex; sending all the patterns would be too confusing.
 	def check_patterns(self, content: list[str, str], forum: discord.ForumChannel,
 	                   pattern_type: ForumPatterns | str) -> None | tuple[Literal[AutoModActions.BLOCK], str] | tuple[
 		Literal[AutoModActions.WARN], str] | tuple[None, None] :

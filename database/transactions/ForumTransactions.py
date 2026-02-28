@@ -59,7 +59,7 @@ class ForumTransactions(DatabaseTransactions):
 		with self.createsession() as session:
 			if id_only :
 				return session.scalars(select(Forums.id).where(Forums.server_id == server_id)).all()
-			return session.scalars(select(Forums).where(Forums.server_id == server_id)).all()
+			return session.scalars(select(Forums).where(Forums.server_id == server_id)).unique().all()
 
 	# === Patterns === #
 	# Patterns are added here, because they are directly linked to forums. A separate transaction class would be overkill.

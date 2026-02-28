@@ -14,10 +14,6 @@ class Config(GroupCog, name="config", description="Commands for configuring the 
 		self.bot = bot
 
 	pass
-
-	# TODO: setup channels:
-	# Automod log channel
-
 	@app_commands.command(name="channels", description="Configure the channels used by Forum Manager!")
 	@app_commands.choices(option=[
 		Choice(name=confkey, value=confkey) for confkey in channels
