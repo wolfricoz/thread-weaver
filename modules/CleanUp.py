@@ -7,9 +7,11 @@ from discord_py_utilities.messages import send_message, send_response
 from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
 from classes.kernel.AccessControl import AccessControl
+from classes.kernel.ConfigData import ConfigData
 from classes.support.regex import verify_regex_length, verify_regex_pattern
 from database.transactions.ForumCleanupTransactions import ForumCleanupTransactions
 from database.transactions.ForumTransactions import ForumTransactions
+from resources.configs.ConfigMapping import ConfigMapping
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 
 OPERATION_CHOICES = [
@@ -29,7 +31,15 @@ class CleanUp(GroupCog, name="cleanup") :
 	@app_commands.choices(operation=OPERATION_CHOICES)
 	@AccessControl().check_premium()
 	async def left(self, interaction: discord.Interaction, operation: Choice['str']) :
-		"""Toggle the removal of threads from users that left. Disabled by default"""
+		"""Toggle the removal of threads from users that left. Disabled by default
+
+		Permissions:
+		- Manage guild
+		- Premium access
+		"""
+		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
+			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
+
 		_key = "CLEANUPLEFT"
 		if operation.value.lower() == "list" :
 			forums = ForumTransactions().get_all(interaction.guild.id)
@@ -74,7 +84,14 @@ class CleanUp(GroupCog, name="cleanup") :
 	@app_commands.checks.has_permissions(manage_channels=True)
 	@AccessControl().check_premium()
 	async def old(self, interaction: discord.Interaction, operation: Choice['str'], days: int = 0) :
-		"""Toggle the removal of threads after a x amount of days per forum. Disabled by default"""
+		"""Toggle the removal of threads after a x amount of days per forum. Disabled by default
+
+		Permissions:
+		- Manage guild
+		- Premium access
+		"""
+		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
+			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
 		_key = "CLEANUPDAYS"
 		forums = []
 		if not operation.value.lower() == "list" :
@@ -129,15 +146,20 @@ class CleanUp(GroupCog, name="cleanup") :
 				return None
 		return None
 
-	# Add cleanup with regex, allowing owners to setup a regex which will remove certain messages (example: posts with only pings @kaori)
-
 	@app_commands.command(name="regex",
 	                      description=f"Toggle the removal of threads if regex is found (ADVANCED). Disabled by default")
 	@app_commands.choices(operation=OPERATION_CHOICES)
 	@app_commands.checks.has_permissions(manage_channels=True)
 	@AccessControl().check_premium()
 	async def regex(self, interaction: discord.Interaction, operation: Choice['str'], pattern:str, days: int = 0) :
-		"""Toggle the removal of threads after a x amount of days per forum. Disabled by default"""
+		"""Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.
+
+		Permissions:
+		- Manage guild
+		- Premium access
+		"""
+		if not ConfigData().get_toggle(interaction.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED"):
+			return await send_response(interaction, f"Your server does not have clean-up enabled! No changes have been made to the config.")
 		_key = "CLEANUPREGEX"
 		forums = []
 		if not operation.value.lower() == "list" :
@@ -204,6 +226,8 @@ class CleanUp(GroupCog, name="cleanup") :
 				await send_response(interaction, formatted_message, ephemeral=True)
 				return None
 		return None
+
+
 
 
 
