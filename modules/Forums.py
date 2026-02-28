@@ -11,6 +11,7 @@ from discord_py_utilities.messages import send_message, send_response
 from classes.discordcontrollers.forum.AutoMod import AutoMod, AutoModActions
 from classes.discordcontrollers.forum.ForumController import ForumController
 from classes.discordcontrollers.forum.ForumPatternController import ForumPatternController
+from classes.discordcontrollers.forum.ForumTaskActions import ForumTask
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
 from classes.kernel.queue import Queue
@@ -28,10 +29,6 @@ OPERATION_CHOICES = [
 	Choice(name="List", value="list"),
 ]
 
-
-# placeholder
-class ForumTasks :
-	pass
 
 
 class Forums(GroupCog, name="forum", description="Forum management commands") :
@@ -156,7 +153,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 					formatted = "\n".join([f"{p.name}: `{p.pattern}` (Action: {p.action})" for p in patterns])
 					await send_response(interaction, f"Patterns for {forum.name}:\n{formatted}", ephemeral=True)
 				return
-
+	# === FREE ===
 	@app_commands.command(name="blacklist_word", description="Adds/Removes a word to the forum blacklist [simple]")
 	@app_commands.choices(operation=OPERATION_CHOICES)
 	@app_commands.checks.has_permissions(manage_guild=True)
@@ -240,6 +237,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    f"{operation.name}ed a minimum character requirement of `{character_count}` {'to' if operation.value == 'add' else 'removed from'} the selected forums for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
+	# === PAID ===
 	@app_commands.command(name="duplicates",
 	                      description="Sets the minimum character requirement for threads in the selected forums")
 	@app_commands.checks.has_permissions(manage_guild=True)
@@ -289,7 +287,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 			embed.add_field(name=key, value=value, inline=False)
 		await send_message(interaction.channel, embed=embed)
 
-
+	# === Utility (free/paid ) ===
 	# TODO: This command needs to be fixed.
 	@app_commands.command(name="recover", description="Recover archived posts")
 	@app_commands.checks.has_permissions(manage_channels=True)
@@ -307,7 +305,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		]
 		for channel in channels :
 			logging.debug(f"[Forum Manager] Checking {channel.name}")
-			forum = ForumTasks(channel, self.bot)
+			forum = ForumTask(channel, self.bot)
 			Queue().add(forum.start())
 
 	# TODO: Also copy over configurations like patterns, minimum character count, etc.
