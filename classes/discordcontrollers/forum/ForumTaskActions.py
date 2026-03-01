@@ -4,19 +4,18 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import discord
-import pytz
 import re2
 from discord import Thread
 from discord.ext import commands
 from discord_py_utilities.messages import send_message
-from sqlalchemy import except_
 
 from classes.kernel.ConfigData import ConfigData
 from classes.kernel.queue import Queue
 from classes.support.ThreadArchive import ThreadArchive
 from data.enums.CleanUpTypes import CleanUpTypes
-from resources.configs.ConfigMapping import ConfigMapping
 from database.database import ForumCleanup, Forums
+from resources.configs.ConfigMapping import ConfigMapping
+
 
 # This needs to be completely overhauled.
 
@@ -35,6 +34,7 @@ class ForumTask :
 
 	async def start(self) :
 		"""This starts the checking of the forum and will walk through all the tasks."""
+		logging.info(f"cleanup starting in {self.forum.name}")
 		await self.recover_archived_posts()
 
 		if not ConfigData().get_toggle(self.forum.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED") :
@@ -56,9 +56,9 @@ class ForumTask :
 			if not archived_thread.archived :
 				continue
 			if active_threads >= 950:
-				logging.info(f"Too many threads in {self.forum.name}, skipping")
+				logging.info(f"Too many threads in {self.forum.guild.name}, skipping")
 				return
-			archived_thread += 1
+			active_threads += 1
 			Queue().add(archived_thread.edit(archived=False))
 
 	async def cleanup_forum(self, thread: discord.Thread) :
@@ -85,7 +85,7 @@ class ForumTask :
 
 
 	def check_user(self, member: discord.Member) -> tuple[bool, str] :
-		r = f""
+		r = f"Deleted abandoned post from {member.name} because they are no longer in the server."
 		if member is None :
 			return True, r
 		if member.id not in self.members :
@@ -154,13 +154,15 @@ class ForumTask :
 		file_name = f"{thread.guild.name}_{thread.name}"
 		if not delete:
 			return
-		channel = ConfigData().get_channel(thread.guild, ConfigMapping.CLEANUP_LOG, optional=True)
+		channel = await ConfigData().get_channel(thread.guild, ConfigMapping.CLEANUP_LOG, optional=True)
 		if isinstance(channel, discord.TextChannel) :
 			archiver = ThreadArchive(file_name, thread)
 			await archiver.run()
-			await send_message(channel, f"{thread.name} has been automatically removed: {reason}", files=[discord.File(fp=archiver.zip_path, filename=file_name)])
+			await send_message(channel, f"[Automated Cleanup] `{thread.name}` has been automatically removed: {reason}", files=[discord.File(fp=archiver.zip_path, filename=file_name)])
 			await archiver.clean_up()
 		Queue().add(thread.delete(reason=reason), 0)
+		if thread.owner in thread.guild.members:
+			Queue().add(send_message(thread.owner, f"[Automated Cleanup] `{thread.name}` has been automatically removed: {reason}"))
 
 
 

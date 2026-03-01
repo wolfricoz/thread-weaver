@@ -150,7 +150,7 @@ class AutoMod(metaclass=Singleton) :
 
 	async def check_action(self, message, thread, forum, action, reason="") :
 		"""This checks the action that should be taken for the message."""
-		log = ConfigData().get_channel(forum.guild.id, ConfigMapping.AUTOMOD_LOG, optional=True)
+		log = await ConfigData().get_channel(forum.guild.id, ConfigMapping.AUTOMOD_LOG, optional=True)
 		match action :
 			case AutoModActions.BLOCK :
 				embed = AutomodLayout(

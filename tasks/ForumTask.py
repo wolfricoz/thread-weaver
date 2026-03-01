@@ -23,10 +23,10 @@ class ForumTask(Cog) :
 
 	pass
 
-	# this task will run every 30 minutes, you can change the time interval as needed!
-	@tasks.loop(hours=1)
+	@tasks.loop(hours=24)
 	async def check_forums_task(self) :
 		# This is a sample task that runs every 30 minutes.
+		logging.info("Checking forums...")
 		for guild in  self.bot.guilds:
 			forum_configs = ForumTransactions().get_all(guild.id)
 			for forum_config in forum_configs :

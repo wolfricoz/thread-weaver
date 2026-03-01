@@ -162,6 +162,7 @@ class ConfigTransactions(DatabaseTransactions) :
 			from classes.kernel.ConfigData import ConfigData
 			ConfigData().load_guild(guildid)
 
+
 	
 	
 	def server_config_get(self, guildid) :
