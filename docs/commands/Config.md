@@ -47,3 +47,15 @@ For example:
 
 ---
 
+### `toggles`
+
+**Usage:** `/config toggles <key> <action>`
+
+> This command allows you to enable or disable various features of the bot.
+You can turn things on or off to best suit your server's needs.
+
+**Permissions:**
+- You'll need the `Manage Server` permission to use this command.
+
+---
+

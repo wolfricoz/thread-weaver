@@ -1,8 +1,10 @@
 {
-    "left": "Toggle the removal of threads from users that left. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
+    "abandoned": "Toggle the removal of threads from users that left. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "old": "Toggle the removal of threads after a x amount of days per forum. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "regex": "Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.\n\nPermissions:\n- Manage guild\n- Premium access",
+    "missing_starter": "Toggle the removal of threads with missing starter message. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "channel": "Channel configuration for Forum Manager. This command allows you to set the channels used by the bot for various features. For example, you can set the channel where the bot will log automod actions.\n\n**Permissions:**\n- `Manage Server`",
+    "toggles": "This command allows you to enable or disable various features of the bot.\nYou can turn things on or off to best suit your server's needs.\n\n**Permissions:**\n- You'll need the `Manage Server` permission to use this command.",
     "reload_env": "Reloads the environment variables from the .env file.",
     "add_staff": "[DEV] Adds a user to the Banwatch staff with a specified role.\n\n**Permissions:**\n- `Bot Owner`",
     "quit": "[DEV] Shuts down the bot.\n\n**Permissions:**\n- `Bot Owner`",

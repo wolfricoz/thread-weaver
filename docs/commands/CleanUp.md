@@ -36,9 +36,9 @@ For example:
 .. versionadded:: 2.0
 
 
-### `left`
+### `abandoned`
 
-**Usage:** `/cleanup left <operation>`
+**Usage:** `/cleanup abandoned <operation>`
 
 > Toggle the removal of threads from users that left. Disabled by default
 
@@ -65,6 +65,18 @@ Permissions:
 **Usage:** `/cleanup regex <operation> <pattern> <days>`
 
 > Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.
+
+Permissions:
+- Manage guild
+- Premium access
+
+---
+
+### `missing_starter`
+
+**Usage:** `/cleanup missing_starter <operation>`
+
+> Toggle the removal of threads with missing starter message. Disabled by default
 
 Permissions:
 - Manage guild
