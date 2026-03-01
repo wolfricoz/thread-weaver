@@ -6,7 +6,7 @@ from discord_py_utilities.messages import send_response
 
 from classes.kernel.ConfigData import ConfigData
 from classes.kernel.config.utils import ConfigUtils
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 from database.transactions.ConfigTransactions import ConfigTransactions
 from resources.configs.ConfigMapping import channels, toggles
 

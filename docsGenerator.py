@@ -8,6 +8,7 @@ from discord.ext import commands
 
 from data.env.loader import load_environment
 from project.data import CACHE, VERSION
+from resources.configs.ConfigMapping import channels, docs, toggles
 
 
 class DocGenerator():
@@ -34,6 +35,8 @@ class DocGenerator():
 
             self.load_file(file, nav=count)
             count += 1
+        # == Generate config docs ==
+        self.create_config()
 
     def load_file(self, file, nav=1):
         name = os.path.splitext(os.path.basename(file))[0]
@@ -74,12 +77,12 @@ class DocGenerator():
                     for function in tclass.__dict__:
                         self.command_line(docfile, function, tclass, domain, )
 
-    def document_header(self, module, module_name: str, nav):
+    def document_header(self, module, module_name: str, nav, parent = "parent: Commands"):
 
         return f"""---
 layout: default
 title: {module_name}
-parent: Commands
+{parent}
 nav_order: {nav}
 ---
 
@@ -87,7 +90,7 @@ nav_order: {nav}
 <h6>version: {VERSION}</h6>
 <h6>Documentation automatically generated from docstrings.</h6>
 
-{inspect.getdoc(module)}
+{inspect.getdoc(module) if not isinstance(module, str) else module}
 
 
 """
@@ -145,6 +148,21 @@ nav_order: {nav}
         with open(CACHE, "w", encoding="utf-8") as cachefile:
             json.dump(self.command_cache, cachefile, indent=4)
         print("===Command cache file created===")
+
+    def create_config(self):
+        with open('docs/config.md', 'w', encoding="utf-8") as configfile:
+            configfile.write(self.document_header("", "Configuration", 2, ""))
+            configfile.write("\n<h2>Channels</h2>")
+            for c in channels:
+                configfile.write(f"\n\n### {c}\n"
+                                 f"{docs.get(c, 'This config option is missing documentation, let the devs know!')}")
+            configfile.write("\n<h2>Toggles</h2>")
+            for t in toggles:
+                configfile.write(f"\n\n### {t}\n"
+                                 f"{docs.get(t, 'This config option is missing documentation, let the devs know!')}")
+
+
+
 
 load_environment()
 DocGenerator()
