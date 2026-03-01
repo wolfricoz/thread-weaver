@@ -10,7 +10,7 @@ from discord.ext import commands
 from discord_py_utilities.messages import send_message
 
 from classes.kernel.ConfigData import ConfigData
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 from classes.support.ThreadArchive import ThreadArchive
 from data.enums.CleanUpTypes import CleanUpTypes
 from database.database import ForumCleanup, Forums

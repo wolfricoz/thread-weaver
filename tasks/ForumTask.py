@@ -6,7 +6,7 @@ from discord.ext.commands import Bot, Cog
 
 from classes.discordcontrollers.forum.AutoMod import AutoMod
 from classes.discordcontrollers.forum.ForumTaskActions import ForumTask as ForumManager
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 from database.transactions.ForumTransactions import ForumTransactions
 
 

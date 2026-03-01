@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 
 
 class QueueTask(commands.Cog) :

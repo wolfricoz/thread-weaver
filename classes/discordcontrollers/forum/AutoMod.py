@@ -10,7 +10,7 @@ from discord_py_utilities.messages import send_message
 
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 from classes.support.singleton import Singleton
 from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions

@@ -14,7 +14,7 @@ from classes.discordcontrollers.forum.ForumPatternController import ForumPattern
 from classes.discordcontrollers.forum.ForumTaskActions import ForumTask
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
-from classes.kernel.queue import Queue
+from classes.kernel.Queue import Queue
 from classes.support.ThreadArchive import ThreadArchive
 from classes.support.regex import verify_regex_length, verify_regex_pattern
 from data.enums.PatternTypes import ForumPatterns

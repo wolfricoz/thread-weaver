@@ -4,7 +4,7 @@ import os
 import discord
 from discord import app_commands
 
-from classes.kernel.queue import Singleton
+from classes.kernel.Queue import Singleton
 from database.transactions.ServerTransactions import ServerTransactions
 from database.transactions.StaffTransactions import StaffTransactions
 

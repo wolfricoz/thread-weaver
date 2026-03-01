@@ -8,7 +8,7 @@ from discord import CategoryChannel, ForumChannel, StageChannel, TextChannel, Th
 from discord_py_utilities.messages import send_message
 from discord_py_utilities.permissions import find_first_accessible_text_channel
 
-from classes.kernel.queue import Singleton
+from classes.kernel.Queue import Singleton
 from database.transactions.ConfigTransactions import ConfigTransactions
 from database.transactions.ServerTransactions import ServerTransactions
 

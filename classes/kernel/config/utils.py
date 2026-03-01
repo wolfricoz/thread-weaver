@@ -5,6 +5,7 @@ import discord
 from discord_py_utilities.messages import send_message
 
 from classes.kernel.ConfigData import ConfigData
+from resources.configs.ConfigMapping import ConfigMapping
 
 
 class ConfigUtils(ABC):
@@ -14,12 +15,12 @@ class ConfigUtils(ABC):
 	async def log_change(guild:discord.Guild, changes: dict, user_name: str = None, channel: discord.TextChannel = None) :
 		guild_id = guild.id
 		logging.info(f"Configuration changed in guild {guild_id}: {changes} by user {user_name}")
-		if not ConfigData().get_toggle(guild_id, "log_config_changes") :
+		if not ConfigData().get_toggle(guild_id, ConfigMapping.LOG_CHANGES) :
 			logging.info("Logging of configuration changes is disabled.")
 			return
 		logging.info("Logging of configuration changes is enabled.")
 		if not channel:
-			channel = ConfigData().get_channel(guild, "approval_channel")
+			channel = ConfigData().get_channel(guild, ConfigMapping.CHANGE_LOG_CHANNEL)
 		if channel is None :
 			logging.info("No modlobby channel found for logging configuration changes.")
 			return
