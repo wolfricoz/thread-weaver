@@ -12,3 +12,4 @@ requests
 google-re2
 uvicorn
 levenshtein
+gunicorn
