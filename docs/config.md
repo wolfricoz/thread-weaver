@@ -6,7 +6,7 @@ nav_order: 2
 ---
 
 <h1>Configuration</h1>
-<h6>version: 0.1</h6>
+<h6>version: 0.5: Alpha</h6>
 <h6>Documentation automatically generated from docstrings.</h6>
 
 
@@ -26,6 +26,9 @@ The channel ID where summaries of deleted messages and cleanup tasks are sent.
 
 ### CHANGES_LOG
 The channel ID where the audit trail for config updates is maintained.
+
+### PING_ON_THREAD_CHANNEL
+Specifies the dedicated channel where staff receive notifications about new thread activity. Enter a Channel ID to redirect pings away from public view and into a private staff-only logs or alerts channel.
 <h2>Toggles</h2>
 
 ### CLEANUP_ENABLED
@@ -36,3 +39,6 @@ Toggle to automatically unarchive or 'bump' threads when they are closed by inac
 
 ### LOG_CONFIG_CHANGES
 Toggle to enable logging whenever a configuration value is modified via commands.
+
+### PING_ON_THREAD
+Enables or disables an automatic notification to staff members whenever a new message is posted in a thread.

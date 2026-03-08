@@ -6,7 +6,7 @@ nav_order: 1
 ---
 
 <h1>CleanUp</h1>
-<h6>version: 0.1</h6>
+<h6>version: 0.5: Alpha</h6>
 <h6>Documentation automatically generated from docstrings.</h6>
 
 Represents a cog that also doubles as a parent :class:`discord.app_commands.Group` for

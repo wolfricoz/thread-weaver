@@ -124,6 +124,20 @@ async def setup_hook() :
 	logging.info(f'Loaded {len(loaded)} modules: {", ".join(loaded)}')
 
 
+@bot.event
+async def on_guild_join(guild: discord.Guild) -> None :
+	dev_channel = bot.get_channel(int(env('DEVCHANNEL', 0)))
+	if dev_channel is None :
+		logging.warning(f"Dev channel {env('DEVCHANNEL', 0)} not found")
+		return
+	membercount = len([m for m in guild.members if not m.bot])
+	await send_message(dev_channel, f"Forum Manager is now in {len(bot.guilds)}! It just joined:"
+	               f"\nGuild: `{guild}({guild.id})`"
+	               f"\nOwner: `{guild.owner}({guild.owner.id})`"
+	               f"\nMember count: {membercount}"
+	               f"\n\nThank you for using Forum Manager!")
+
+
 # runs the bot with the token
 if env('API') != "TRUE" :
 

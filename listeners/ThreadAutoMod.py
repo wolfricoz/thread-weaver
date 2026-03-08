@@ -2,8 +2,11 @@ import asyncio
 
 import discord
 from discord.ext.commands import Cog, Bot
+from discord_py_utilities.messages import send_message
 
 from classes.discordcontrollers.forum.AutoMod import AutoMod
+from classes.kernel.ConfigData import ConfigData
+from resources.configs.ConfigMapping import ConfigMapping
 
 
 class ThreadAutoMod(Cog) :
@@ -21,11 +24,19 @@ class ThreadAutoMod(Cog) :
 		if message is None :
 			# TODO: add a log here for failed message fetches, this is important for debugging and improving the system.
 			return
+		if ConfigData().get_toggle(thread.guild.id, ConfigMapping.PING_ON_THREAD, "ENABLED", "DISABLED") :
+			channel = await ConfigData().get_channel(thread.guild, ConfigMapping.PING_ON_THREAD_CHANNEL)
+			ping = ConfigData().get_key(thread.guild.id, ConfigMapping.PING_ON_THREAD_ROLE, 0)
+			payload = f"<@{ping}>\n`{thread.name}` created by {thread.owner.mention} in {thread.parent.name}"
+			if ping == 0:
+				payload = f"`{thread.name}` created by {thread.owner.mention} in {thread.parent.name}"
+			await send_message(channel, payload)
+
 		await AutoMod().run(message)
 
 
-	@Cog.listener('on_message_update')
-	async def on_message_update(self, before, after) :
+	@Cog.listener('on_message_edit')
+	async def on_message_edit(self, before, after) :
 		"""This event is triggered when a message is updated."""
 		await AutoMod().run(after)
 
@@ -33,6 +44,8 @@ class ThreadAutoMod(Cog) :
 	@Cog.listener('on_message')
 	async def on_message(self, message) :
 		"""This event is triggered when a message is created."""
+		if message.id == message.channel.id:
+			return
 		await AutoMod().run(message)
 
 

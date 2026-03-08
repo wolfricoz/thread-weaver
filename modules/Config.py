@@ -8,7 +8,7 @@ from classes.kernel.ConfigData import ConfigData
 from classes.kernel.config.utils import ConfigUtils
 from classes.kernel.Queue import Queue
 from database.transactions.ConfigTransactions import ConfigTransactions
-from resources.configs.ConfigMapping import channels, toggles
+from resources.configs.ConfigMapping import channels, roles, toggles
 
 
 class Config(GroupCog, name="config", description="Commands for configuring the bot") :
@@ -36,6 +36,23 @@ class Config(GroupCog, name="config", description="Commands for configuring the 
 			return await send_response(interaction, f"❌ I need the `Read Messages` permission in {channel.mention} to set it as the {option.value} channel.")
 		ConfigData().add_key(interaction.guild.id, option.value.upper(), channel.id, overwrite=True)
 		await send_response(interaction, f"Set {option.name} to {channel.mention}")
+		return None
+
+	@app_commands.command(name="roles", description="Configure the roles used by Forum Manager!")
+	@app_commands.choices(option=[
+		Choice(name=confkey, value=confkey) for confkey in roles
+	])
+	@app_commands.checks.has_permissions(manage_guild=True)
+	@app_commands.guild_only()
+	async def roles(self, interaction: discord.Interaction, option: Choice[str], role: discord.Role) :
+		"""
+		This command allows you to set the roles used by the bot for various features. For example, you can set the staff role that the bot will ping for thread updates or the role authorized to manage forum automod actions.
+
+		**Permissions:**
+		- `Manage Server`
+		"""
+		ConfigData().add_key(interaction.guild.id, option.value.upper(), role.id, overwrite=True)
+		await send_response(interaction, f"Set {option.name} to {role.mention}")
 		return None
 
 	@app_commands.command(description="Allows you to enable or disable various features of the bot.")

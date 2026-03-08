@@ -6,7 +6,7 @@ nav_order: 2
 ---
 
 <h1>Config</h1>
-<h6>version: 0.1</h6>
+<h6>version: 0.5: Alpha</h6>
 <h6>Documentation automatically generated from docstrings.</h6>
 
 Represents a cog that also doubles as a parent :class:`discord.app_commands.Group` for
@@ -41,6 +41,17 @@ For example:
 **Usage:** `/config channel <option> <channel>`
 
 > Channel configuration for Forum Manager. This command allows you to set the channels used by the bot for various features. For example, you can set the channel where the bot will log automod actions.
+
+**Permissions:**
+- `Manage Server`
+
+---
+
+### `roles`
+
+**Usage:** `/config roles <option> <role>`
+
+> This command allows you to set the roles used by the bot for various features. For example, you can set the staff role that the bot will ping for thread updates or the role authorized to manage forum automod actions.
 
 **Permissions:**
 - `Manage Server`

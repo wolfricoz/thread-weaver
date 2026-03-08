@@ -6,7 +6,7 @@ nav_order: 5
 ---
 
 <h1>Forums</h1>
-<h6>version: 0.1</h6>
+<h6>version: 0.5: Alpha</h6>
 <h6>Documentation automatically generated from docstrings.</h6>
 
 Forum management commands
