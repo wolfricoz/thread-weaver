@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os.path
 import re
@@ -7,7 +8,7 @@ import discord
 
 
 class ThreadArchive():
-	def __init__(self, name: str, channel: discord.Thread | discord.ForumChannel) :
+	def __init__(self, name: str, channel: discord.Thread | discord.ForumChannel | discord.TextChannel) :
 		self.threads = None
 		self.name = self.sanitize_filename(name)
 		self.channel = channel
@@ -26,13 +27,20 @@ class ThreadArchive():
 		# Setup Variables
 
 		# Check if its a thread of a forum.
+
 		await self.get_threads()
 
 		for thread in self.threads:
 			archive_dir, file_path = await self.create_dir(thread)
 			html = await self.thread_to_html(thread, archive_dir)
 			await self.create_file(thread, html, file_path)
-			await self.create_zip()
+		if isinstance(self.channel, discord.TextChannel) :
+			archive_dir, file_path = await self.create_dir(self.channel)
+			html = await self.thread_to_html(self.channel, archive_dir)
+			await self.create_file(self.channel, html, file_path)
+		logging.info(f"Finished creating archive!")
+
+		await self.create_zip()
 
 
 
@@ -45,7 +53,7 @@ class ThreadArchive():
 			self.threads = self.channel.threads + [thread async for thread in self.channel.archived_threads(limit=None)]
 
 
-	async def create_dir(self, thread:discord.Thread) -> tuple[str, str] :
+	async def create_dir(self, thread:discord.Thread | discord.TextChannel) -> tuple[str, str] :
 		"""Creates a directory for the thread and returns the path."""
 		name = self.sanitize_filename(thread.name.replace(" ", "_"))
 		path = f"archives/{thread.id}"
@@ -58,32 +66,75 @@ class ThreadArchive():
 
 		return path, file_path
 
-
-	async def thread_to_html(self, thread, archive_path: str) -> str:
+	async def thread_to_html(self, thread: discord.Thread | discord.TextChannel, archive_path: str) -> str :
 		"""This will convert a thread to a html file. Returns HTML as a string."""
-		with open('resources/css/export.css', 'r') as f:
+		with open('resources/css/export.css', 'r') as f :
 			css = f.read()
 
-		html = f"<html><head><title>{thread.name}</title></head><body><h1>{thread.name}</h1><p>Created at: {thread.created_at.strftime("%m/%d/%Y %H:%M")}</p><p>Author: {thread.owner}</p><hr><style>{css}</style></head><body>"
-		async for message in thread.history(limit=None, oldest_first=True) :
-			# For each message, we will create a div with the message content and attachments.
-			html += f"<div class='message'><p><strong>{message.author}</strong> at {message.created_at.strftime("%m/%d/%Y %H:%M")}:</p><p>{message.content}</p>"
-			if not message.attachments :
-				continue
-			html += '<div class="attachment-container">'
-			for attachment in message.attachments :
-				if attachment.content_type and attachment.content_type.startswith("image/") :
-					# If the attachment is an image, we will download it and add it to the html.
-					image_path = f"images/{attachment.filename}"
-					await attachment.save(f"{archive_path}/{image_path}")
-					html += f"<a href='{image_path}' title='Click to view full image' target='_blank'><img src='{image_path}' alt='{attachment.filename}' class='attachment'></a>"
-				else :
-					# If the attachment is not an image, we will just add a link to it.
-					html += f"<p><a href='{attachment.url}' target='_blank'>{attachment.filename}</a></p>"
-				html += '</div></div><hr>'
+		# Determine header info
+		if isinstance(thread, discord.Thread) :
+			header = f"<h1>{thread.name}</h1><p>Created at: {thread.created_at.strftime('%m/%d/%Y %H:%M')}</p><p>Author: {thread.owner}</p><hr>"
+			sleep = 0
+		else :
+			header = f"<h1>{thread.name}</h1><hr>"
+			sleep = 0.5
 
-		# close the html tags
-		html += f"</body></html>"
+		html = f"<html><head><title>{thread.name}</title><style>{css}</style></head><body>{header}"
+
+		async for message in thread.history(limit=None, oldest_first=True) :
+			# Base message structure
+			await asyncio.sleep(sleep)
+			html += f"<div class='message'><p><strong>{message.author}</strong> at {message.created_at.strftime('%m/%d/%Y %H:%M')}:</p>"
+
+			if message.content :
+				html += f"<p>{message.content}</p>"
+
+			# --- EMBED SUPPORT START ---
+			for embed in message.embeds :
+				# We wrap the embed in a div for styling (border, padding, etc.)
+				border_color = f"border-left: 4px solid #{embed.color.value:06x};" if embed.color else "border-left: 4px solid #202225;"
+				html += f"<div class='embed' style='{border_color} padding: 10px; margin: 10px 0; background: #2f3136; border-radius: 4px;'>"
+
+				if embed.author :
+					html += f"<div class='embed-author'><strong>{embed.author.name}</strong></div>"
+
+				if embed.title :
+					html += f"<div class='embed-title' style='font-weight: bold; font-size: 1.1em;'>{embed.title}</div>"
+
+				if embed.description :
+					html += f"<div class='embed-description' style='white-space: pre-wrap;'>{embed.description}</div>"
+
+				if embed.fields :
+					html += "<div class='embed-fields' style='display: grid; gap: 10px; margin-top: 10px;'>"
+					for field in embed.fields :
+						inline_style = "grid-column: span 1;" if field.inline else "grid-column: 1 / -1;"
+						html += f"<div style='{inline_style}'><strong>{field.name}</strong><br>{field.value}</div>"
+					html += "</div>"
+
+				if embed.image :
+					html += f"<img src='{embed.image.url}' style='max-width: 100%; border-radius: 4px; margin-top: 10px;'>"
+
+				if embed.footer :
+					html += f"<div class='embed-footer' style='font-size: 0.8em; margin-top: 10px; opacity: 0.6;'>{embed.footer.text}</div>"
+
+				html += "</div>"
+
+
+			# Attachment handling
+			if message.attachments :
+				html += '<div class="attachment-container">'
+				for attachment in message.attachments :
+					if attachment.content_type and attachment.content_type.startswith("image/") :
+						image_path = f"images/{attachment.filename}"
+						await attachment.save(f"{archive_path}/{image_path}")
+						html += f"<a href='{image_path}' target='_blank'><img src='{image_path}' class='attachment' style='max-width: 300px;'></a>"
+					else :
+						html += f"<p><a href='{attachment.url}' target='_blank'>{attachment.filename}</a></p>"
+				html += '</div>'
+
+			html += '</div><hr>'
+
+		html += "</body></html>"
 		return html.replace(">", ">\n")
 
 	async def create_file(self, thread, html, file_path: str) :

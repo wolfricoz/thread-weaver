@@ -34,7 +34,14 @@ class Export(GroupCog, name="export") :
 		if not result :
 			logging.info(f"{interaction.user} cancelled the export of {thread.name}")
 			return
-		export_class = ThreadArchive(interaction.guild.name + "_" + thread.name, channel=thread)
+		try:
+			export_class = ThreadArchive(interaction.guild.name + "_" + thread.name, channel=thread)
+		except Exception as e:
+			await send_message(interaction.user, f"Failed to create archive: {e}")
+			logging.error(e, exc_info=True)
+
+			return
+
 		await export_class.run()
 		try :
 			await send_message(interaction.user, f"Here is your export of `{thread.name}`:",
@@ -77,10 +84,59 @@ class Export(GroupCog, name="export") :
 		if not result :
 			logging.info(f"{interaction.user} cancelled the export of {forum.name}")
 			return
-		export_class = ThreadArchive(interaction.guild.name + "_" + forum.name, channel=forum)
-		await export_class.run()
+		try:
+			export_class = ThreadArchive(interaction.guild.name + "_" + forum.name, channel=forum)
+			await export_class.run()
+
+		except Exception as e:
+			await send_message(interaction.user, f"Failed to create archive: {e}")
+			logging.error(e, exc_info=True)
+			return
+
 		try :
 			await send_message(interaction.user, f"Here is your export of `{forum.name}`:",
+			                   files=[discord.File(export_class.zip_path)])
+		except discord.Forbidden :
+			await send_message(interaction.channel,
+			                   f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.")
+		except Exception as e :
+			await send_message(interaction.user,
+			                   f"{interaction.user.mention}, an error occurred while sending you the export: {e}")
+			logging.error(e, exc_info=True)
+			return
+		await export_class.clean_up()
+
+	@app_commands.command(name="channel", description="Creates an export of an entire channel")
+	@app_commands.checks.has_permissions(manage_threads=True)
+	@AccessControl().check_premium()
+	async def channel(self, interaction: discord.Interaction, channel: discord.TextChannel) :
+		"""
+		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
+
+		**Permissions:**
+		- `Manage Threads`
+		- `Premium Access`
+		"""
+		buttons = ConfirmButtons(
+			confirm_message=f"Creating an export of `{channel.name}`, this may take a while... The results will be sent to your DMs")
+		result = await buttons.send_confirmation(interaction,
+		                                         f"Are you sure you want to export `{channel.name}`? This will create a .zip file containing the thread's messages and image attachments. if you delete the thread after export, non-image attachments may not work as they rely on the url provided by discord, which is deleted when the message/thread is deleted. Threads with a large amount of images may fail to export due to the size of the .zip file. If you have any issues with the export, please contact support.\n\n**note** Forums have a high chance of failing to export due to the large amount of messages and attachments they can contain. It is recommended to export individual threads within the forum instead of the entire forum to ensure a successful export.",
+		                                         )
+		if not result :
+			logging.info(f"{interaction.user} cancelled the export of {channel.name}")
+			return
+		try:
+			export_class = ThreadArchive(interaction.guild.name + "_" + channel.name, channel=channel)
+
+			await export_class.run()
+
+		except Exception as e:
+			await send_message(interaction.user, f"Failed to create archive: {e}")
+			logging.error(e, exc_info=True)
+
+			return
+		try :
+			await send_message(interaction.user, f"Here is your export of `{channel.name}`:",
 			                   files=[discord.File(export_class.zip_path)])
 		except discord.Forbidden :
 			await send_message(interaction.channel,
