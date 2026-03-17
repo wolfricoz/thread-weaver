@@ -63,8 +63,7 @@ class CleanUp(GroupCog, name="cleanup") :
 			match operation.value.lower() :
 				case "add" :
 					if not controller.check_forum_in_config(forum.id) :
-						return await send_message(interaction.channel,
-						                          f"{forum.name} is not registered as a forum channel. Please add it first using `/forum add`.")
+						ForumTransactions().add(forum.id, interaction.guild.id, forum.name)
 					ForumCleanupTransactions().add(forum.id, _key)
 					success.append(forum)
 					_state = "enabled"
@@ -112,9 +111,7 @@ class CleanUp(GroupCog, name="cleanup") :
 					                           ephemeral=True)
 				for forum in forums :
 					if not controller.check_forum_in_config(forum.id) :
-						await send_message(interaction.channel,
-						                   f"{forum.name} is not registered as a forum channel. Please add it first using `/forum add`.")
-						continue
+						ForumTransactions().add(forum.id, interaction.guild.id, forum.name)
 					success.append(forum)
 					ForumCleanupTransactions().add(forum.id, _key, days=days)
 
@@ -195,9 +192,7 @@ class CleanUp(GroupCog, name="cleanup") :
 					                           ephemeral=True)
 				for forum in forums :
 					if not controller.check_forum_in_config(forum.id) :
-						await send_message(interaction.channel,
-						                   f"{forum.name} is not registered as a forum channel. Please add it first using `/forum add`.")
-						continue
+						ForumTransactions().add(forum.id, interaction.guild.id, forum.name)
 					success.append(forum)
 					ForumCleanupTransactions().add(forum.id, _key, days=days, extra=valid_pattern)
 					await send_response(interaction,
@@ -266,8 +261,7 @@ class CleanUp(GroupCog, name="cleanup") :
 			match operation.value.lower() :
 				case "add" :
 					if not controller.check_forum_in_config(forum.id) :
-						return await send_message(interaction.channel,
-						                          f"{forum.name} is not registered as a forum channel. Please add it first using `/forum add`.")
+						ForumTransactions().add(forum.id, interaction.guild.id, forum.name)
 					ForumCleanupTransactions().add(forum.id, _key)
 					success.append(forum)
 					_state = "enabled"
