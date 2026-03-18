@@ -62,6 +62,7 @@ class Queue(metaclass=Singleton) :
 			return self.normal_priority_queue.pop(0)
 		if len(self.low_priority_queue) > 0 :
 			return self.low_priority_queue.pop(0)
+		return None
 
 	async def start(self) :
 		if not self.task_finished or self.empty() :

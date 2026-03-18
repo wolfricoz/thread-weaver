@@ -1,14 +1,23 @@
+import asyncio
 import os
 
 import discord
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext.commands import GroupCog, Bot
+from discord_py_utilities.invites import create_invite
 from discord_py_utilities.messages import send_response
+from discord_py_utilities.permissions import find_first_accessible_text_channel
 
 from classes.kernel.AccessControl import AccessControl
+from classes.kernel.ConfigData import ConfigData
 from data.env.loader import env, load_environment
 from database.transactions.StaffTransactions import StaffTransactions
+from resources.configs.ConfigMapping import ConfigMapping
+
+
+async def send_modal(interaction, param, param1, param2) :
+	pass
 
 
 class Dev(GroupCog) :
@@ -68,6 +77,44 @@ class Dev(GroupCog) :
 		StaffTransactions().delete(user.id)
 		await send_response(interaction, f"Staff member {user.mention} successfully removed!")
 		AccessControl().reload()
+
+
+	@app_commands.command(name="announce", description="[DEV] Send an announcement to all guild owners")
+	@AccessControl().check_access("dev")
+	async def announce(self, interaction: discord.Interaction) :
+		message = await send_modal(interaction, "What is the announcement?", "Announcement", 1700)
+		if interaction.user.id != 188647277181665280 :
+			return
+		bot = self.bot
+		supportguild = bot.get_guild(bot.SUPPORTGUILD)
+		support_invite = await create_invite(supportguild)
+		announcement = (f"## BAN WATCH ANNOUNCEMENT"
+		                f"\n{message}"
+		                f"\n-# You can join our support server by [clicking here to join]({support_invite}). If you have any questions, errors or concerns, please open a ticket in the support server.")
+
+		for guild in self.bot.guilds :
+			try:
+				await asyncio.sleep(0)
+				channel = await ConfigData().get_channel(guild, ConfigMapping.CHANGE_LOG_CHANNEL)
+				if not channel:
+					channel = await find_first_accessible_text_channel(guild)
+				await channel.send(announcement)
+			except Exception as e :
+				try :
+					await guild.owner.send(
+						f"Banwatch could not send the announcement to your modchannel in {guild.name}, please check the mod channel settings. You can setup your modchannel with: ```/config change option:Mod channel channel:```")
+					await guild.owner.send(announcement)
+				except Exception as e :
+					await interaction.channel.send(f"Error sending to {guild}({guild.owner}): {e}")
+
+	@app_commands.command(name="leave_server", description="[DEV] Leave a server")
+	@AccessControl().check_access("dev")
+	async def leave_server(self, interaction: discord.Interaction, guildid: int) :
+		guild = self.bot.get_guild(guildid)
+		await guild.leave()
+		await send_response(interaction,f"Left {guild}")
+
+
 
 
 async def setup(bot: Bot) :
