@@ -21,8 +21,7 @@ class ForumPatternController :
 	async def add_pattern(self, interaction: discord.Interaction, channel: discord.TextChannel | discord.ForumChannel,
 	                      name: str, pattern: str, action: str = "BLOCK") -> Message | None :
 		if not self.check_forum_in_config(channel.id) :
-			return await send_message(interaction.channel,
-			                          f"{channel.name} is not registered as a forum channel. Please add it first using `/forum add`.")
+			ForumTransactions().add(channel.id, interaction.guild.id, channel.name)
 
 		pattern_count = ForumTransactions().count_patterns(channel.id)
 		if pattern_count >= FREE_BLACKLIST_WORD_LIMIT and not AccessControl().is_premium(interaction.guild.id) :
