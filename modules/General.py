@@ -8,10 +8,10 @@ class General(Cog) :
 	def __init__(self, bot: Bot) :
 		self.bot = bot
 
-	@app_commands.command(name="acrhive_threads",
+	@app_commands.command(name="archive_threads",
 	                      description="Archives all threads in the specified TextChannel")
 	@app_commands.checks.has_permissions(manage_guild=True)
-	async def acrhive_threads(self, interaction: discord.Interaction, channel: discord.TextChannel) :
+	async def archive_threads(self, interaction: discord.Interaction, channel: discord.TextChannel) :
 		"""
 		Archives all threads in the specified TextChannel.
 
