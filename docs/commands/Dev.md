@@ -77,3 +77,19 @@ For example:
 
 ---
 
+### `announce`
+
+**Usage:** `/dev announce`
+
+> Missing Documentation
+
+---
+
+### `leave_server`
+
+**Usage:** `/dev leave_server <guildid>`
+
+> Missing Documentation
+
+---
+

@@ -60,3 +60,15 @@ For example:
 
 ---
 
+### `channel`
+
+**Usage:** `/export channel <channel>`
+
+> Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
+
+**Permissions:**
+- `Manage Threads`
+- `Premium Access`
+
+---
+
