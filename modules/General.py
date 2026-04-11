@@ -20,7 +20,7 @@ class General(Cog) :
 		"""
 		await interaction.response.defer(ephemeral=True)
 		count = 0
-		async for thread in channel.threads() :
+		for thread in channel.threads :
 			if thread.archived :
 				continue
 			await thread.edit(archived=True)
