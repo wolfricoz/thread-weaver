@@ -1,0 +1,32 @@
+---
+layout: default
+title: General
+parent: Commands
+nav_order: 6
+---
+
+<h1>General</h1>
+<h6>version: 0.5: Alpha</h6>
+<h6>Documentation automatically generated from docstrings.</h6>
+
+The base class that all cogs must inherit from.
+
+A cog is a collection of commands, listeners, and optional state to
+help group commands together. More information on them can be found on
+the :ref:`ext_commands_cogs` page.
+
+When inheriting from this class, the options shown in :class:`CogMeta`
+are equally valid here.
+
+
+### `acrhive_threads`
+
+**Usage:** `/general acrhive_threads <channel>`
+
+> Archives all threads in the specified TextChannel.
+
+**Permissions:**
+- Requires `Manage Guild` permission.
+
+---
+
