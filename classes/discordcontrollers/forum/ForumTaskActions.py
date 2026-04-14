@@ -85,9 +85,10 @@ class ForumTask :
 
 
 	def check_user(self, member: discord.Member) -> tuple[bool, str] :
-		r = f"Deleted abandoned post from {member.name} because they are no longer in the server."
+		r = "Deleted abandoned post from user (unable to fetch) because they are no longer in the server."
 		if member is None :
 			return True, r
+		r = f"Deleted abandoned post from {member.name} because they are no longer in the server."
 		if member.id not in self.members :
 			return True, r
 		return False, ""
