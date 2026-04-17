@@ -29,7 +29,7 @@ class ThreadAutoMod(Cog) :
 			ping = ConfigData().get_key(thread.guild.id, ConfigMapping.PING_ON_THREAD_ROLE, 0)
 			payload = f"<@{ping}>\n`{thread.name}` created by {thread.owner.mention} in {thread.parent.name}"
 			if ping == 0:
-				payload = f"`{thread.name}` created by {thread.owner.mention} in {thread.parent.name}"
+				payload = f"`{thread.name}` created by {thread.owner.mention} in {thread.parent.mention}"
 			await send_message(channel, payload)
 
 		await AutoMod().run(message)
