@@ -23,7 +23,7 @@ class ForumTask(Cog) :
 
 	pass
 
-	@tasks.loop(hours=24)
+	@tasks.loop(hours=1)
 	async def check_forums_task(self) :
 		# This is a sample task that runs every 30 minutes.
 		logging.info("Checking forums...")

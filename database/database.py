@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 import pymysql
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, create_engine
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import func
@@ -85,13 +85,20 @@ class ForumPatterns(Base) :
 
 class ForumCleanup(Base) :
 	__tablename__ = "forum_cleanup"
-	id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-	forum_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("forums.id", ondelete="CASCADE"), unique=True)
-	key: Mapped[str] = mapped_column(String(100)) # CLEANUPLEFT, CLEANUPDAYS
+	id: Mapped[int] = mapped_column(BigInteger, autoincrement=True)
+	forum_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("forums.id", ondelete="CASCADE"))
+	key: Mapped[str] = mapped_column(String(100))
 	days: Mapped[int] = mapped_column(BigInteger, nullable=True, default=0)
 	extra: Mapped[str] = mapped_column(Text, nullable=True)
+
 	forum: Mapped["Forums"] = relationship("Forums", back_populates="cleanup")
 
+	# Define the composite unique constraint here
+	__table_args__ = (
+		UniqueConstraint("forum_id", "key", name="forum_cleanup_forum_id_key_unique"),
+		# If you want the id column to still be the Primary Key (best practice):
+		# PrimaryKeyConstraint("id", name="forum_cleanup_pkey")
+	)
 
 class Staff(Base) :
 	__tablename__ = "staff"

@@ -32,8 +32,9 @@ class ForumTask :
 		self.bot = bot
 
 
-	async def start(self) :
+	async def start(self, clean_up_only = False) :
 		"""This starts the checking of the forum and will walk through all the tasks."""
+
 		logging.info(f"cleanup starting in {self.forum.name}")
 		await self.recover_archived_posts()
 
@@ -71,6 +72,8 @@ class ForumTask :
 			delete, reason = self.check_user(thread.owner)
 		if not delete and CleanUpTypes.OLD in self.enabled_cleanups :
 			delete, reason = await self.check_age(thread)
+		if not delete and CleanUpTypes.INACTIVITY in self.enabled_cleanups :
+			delete, reason = await self.check_inactivity(thread)
 		if not delete and CleanUpTypes.REGEX in self.enabled_cleanups :
 			# this one just cleans up messages, it doesn't remove the thread.
 			await self.check_regex(thread)
@@ -98,7 +101,7 @@ class ForumTask :
 		if not conf.days:
 			logging.warning(f"Failed to find days")
 			return False, ""
-		async for message in thread.history(limit=1, oldest_first=False):
+		async for message in thread.history(limit=1, oldest_first=True):
 			if message.created_at.astimezone(timezone.utc) < datetime.now(timezone.utc) - timedelta(days=conf.days):
 				return True, f"`{thread.name}` has been automatically removed because it exceeded the {conf.days}-day age limit."
 
@@ -136,6 +139,20 @@ class ForumTask :
 		except Exception as e:
 			return False, ""
 		return False, ""
+
+
+	async def check_inactivity(self, thread: discord.Thread) -> tuple[bool, str] :
+		conf = self.fetch_cleanup_data(CleanUpTypes.INACTIVITY)
+		if not conf.days:
+			logging.warning(f"Failed to find days")
+			return False, ""
+		async for message in thread.history(limit=1, oldest_first=False):
+			if message.created_at.astimezone(timezone.utc) < datetime.now(timezone.utc) - timedelta(days=conf.days):
+				return True, f"`{thread.name}` has been automatically removed because it exceeded the {conf.days}-day inactivity limit."
+		return False, ""
+
+
+
 
 	# === Support functions ===
 
