@@ -98,7 +98,7 @@ class ForumTask :
 
 	async def check_age(self, thread: discord.Thread):
 		conf = self.fetch_cleanup_data(CleanUpTypes.OLD)
-		if not conf.days:
+		if not conf.days or conf.days < 1:
 			logging.warning(f"Failed to find days")
 			return False, ""
 		async for message in thread.history(limit=1, oldest_first=True):
@@ -110,7 +110,7 @@ class ForumTask :
 
 	async def check_regex(self, thread):
 		conf = self.fetch_cleanup_data(CleanUpTypes.REGEX)
-		if not conf.extra:
+		if not conf.extra or len(conf.extra) < 2:
 			logging.warning(f"Failed to find regex")
 			return False, ""
 
@@ -142,10 +142,17 @@ class ForumTask :
 
 
 	async def check_inactivity(self, thread: discord.Thread) -> tuple[bool, str] :
+		"""
+		Checks the most recent message in the thread, if it passes the time limit the thread is removed.
+
+		"""
 		conf = self.fetch_cleanup_data(CleanUpTypes.INACTIVITY)
-		if not conf.days:
+		if not conf.days or conf.days < 1:
 			logging.warning(f"Failed to find days")
 			return False, ""
+
+
+
 		async for message in thread.history(limit=1, oldest_first=False):
 			if message.created_at.astimezone(timezone.utc) < datetime.now(timezone.utc) - timedelta(days=conf.days):
 				return True, f"`{thread.name}` has been automatically removed because it exceeded the {conf.days}-day inactivity limit."
