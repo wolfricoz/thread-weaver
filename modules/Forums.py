@@ -297,7 +297,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    ephemeral=True)
 		archived_thread: discord.Thread
 		channel: discord.ForumChannel
-		regex = re.compile(f"search", flags=re.IGNORECASE)
+		regex = re.compile(f"(?i)search")
 		channels = [
 			channel
 			for channel in interaction.guild.channels
