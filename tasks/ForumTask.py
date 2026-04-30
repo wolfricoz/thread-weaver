@@ -27,6 +27,7 @@ class ForumTask(Cog) :
 	async def check_forums_task(self) :
 		# This is a sample task that runs every 30 minutes.
 		logging.info("Checking forums...")
+		count = 0
 		for guild in  self.bot.guilds:
 			forum_configs = ForumTransactions().get_all(guild.id)
 			for forum_config in forum_configs :
@@ -34,7 +35,9 @@ class ForumTask(Cog) :
 				if f is None or not isinstance(f, discord.ForumChannel):
 					continue
 				forum_manager = ForumManager(f, forum_config, self.bot)
+				count += 1
 				Queue().add(forum_manager.start(), 0)
+		logging.info(f"Added {count} forums to queue")
 
 	@tasks.loop(hours=1)
 	async def clear_cache(self):

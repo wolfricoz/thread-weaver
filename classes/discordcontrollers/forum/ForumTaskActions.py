@@ -35,7 +35,7 @@ class ForumTask :
 	async def start(self, clean_up_only = False) :
 		"""This starts the checking of the forum and will walk through all the tasks."""
 
-		logging.info(f"cleanup starting in {self.forum.name}")
+		logging.info(f"cleanup starting in {self.forum.name} in {self.forum.guild.name}")
 		await self.recover_archived_posts()
 
 		if not ConfigData().get_toggle(self.forum.guild.id, ConfigMapping.CLEANUP_ENABLED, "ENABLED", "ENABLED") :
