@@ -288,7 +288,6 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		await send_message(interaction.channel, embed=embed)
 
 	# === Utility (free/paid ) ===
-	# TODO: This command needs to be fixed.
 	@app_commands.command(name="recover", description="Recover archived posts")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def recover(self, interaction: discord.Interaction, forum: discord.ForumChannel) :

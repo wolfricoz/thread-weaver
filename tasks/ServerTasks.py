@@ -40,6 +40,7 @@ class ServerTasks(Cog) :
 				await asyncio.sleep(0) # prevents blocking the event loop for too long
 			count += 1
 			db_guild = ServerTransactions().get(guild.id)
+
 			try:
 				if not db_guild:
 					logging.info(f"Adding {guild.name} to the database...")
@@ -50,7 +51,7 @@ class ServerTasks(Cog) :
 					guild.owner.name,
 					guild.name,
 					guild.member_count,
-					await check_guild_invites(self.bot, guild, db_guild.invite),
+					"", # We don't use invites currently, and the bot doesn't have permission so we're skipping them.
 					owner_id=guild.owner.id,
 					active=True
 				)
