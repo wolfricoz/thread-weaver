@@ -305,7 +305,10 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		]
 		for channel in channels :
 			logging.debug(f"[Forum Manager] Checking {channel.name}")
-			forum = ForumTask(channel, self.bot)
+			config = ForumTransactions().get(channel.id)
+			if not config :
+				continue
+			forum = ForumTask(channel, config, self.bot)
 			Queue().add(forum.start())
 
 	# TODO: Also copy over configurations like patterns, minimum character count, etc.
