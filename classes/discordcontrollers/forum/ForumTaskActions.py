@@ -48,7 +48,7 @@ class ForumTask :
 
 	async def recover_archived_posts(self) :
 		"""Loop through archived posts and send a reminder there."""
-		if not ConfigData().get_toggle(self.forum.guild.id, ConfigMapping.RESTORE_ARCHIVED, "ENABLED", "DISABLED"):
+		if not ConfigData().get_toggle(self.forum.guild.id, ConfigMapping.RESTORE_ARCHIVED, "ENABLED", "ENABLED"):
 			return
 		logging.info("recovering archived posts")
 		active_threads: int = len(self.forum.guild.threads)

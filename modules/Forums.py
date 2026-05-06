@@ -333,7 +333,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		forums = [forum for forum in interaction.guild.channels if forum.type == discord.ChannelType.forum]
 		for forum in forums :
 			ForumTransactions().add(forum.id, interaction.user.id, forum.name)
-		await send_response(interaction, f"Successfully added all forums to {interaction.user.name}!")
+		await send_response(interaction, f"Successfully added all forums to the config in {interaction.guild.name}!")
 
 	# TODO: upgrade this command to work with archived threads and add an option to notify the thread starter with the contents of their thread before purging, as well as a confirmation button to prevent accidental purges AND add the option to create an export of each purged thread.
 	@app_commands.command(name="purge")
