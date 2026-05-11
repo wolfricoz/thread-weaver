@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 import pymysql
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, create_engine
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, VARCHAR, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import func
@@ -67,6 +67,7 @@ class Forums(Base) :
 	server: Mapped["Servers"] = relationship("Servers", back_populates="forums")
 	minimum_characters: Mapped[int] = mapped_column(BigInteger, default=0)
 	duplicates: Mapped[bool] = mapped_column(Boolean, default=True)
+	reminder: Mapped[str] = mapped_column(String(2000), nullable=True)
 	patterns: Mapped[List["ForumPatterns"]] = relationship("ForumPatterns", back_populates="forum",
 	                                                       cascade="all, delete-orphan")
 	cleanup: Mapped[List["ForumCleanup"]] = relationship("ForumCleanup", back_populates="forum",

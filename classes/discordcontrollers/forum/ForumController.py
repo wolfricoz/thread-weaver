@@ -7,10 +7,10 @@ from views.select.ForumSelect import ForumSelect
 class ForumController():
 
 	@staticmethod
-	async def select_forums(interaction: discord.Interaction, response: str) :
+	async def select_forums(interaction: discord.Interaction, response: str, keep_interaction: bool = False) -> tuple :
 		"""
 		"""
-		forumselect = ForumSelect()
+		forumselect = ForumSelect(keep_interaction=keep_interaction)
 		await send_response(interaction, response, view=forumselect, ephemeral=True)
 		await forumselect.wait()
-		return forumselect.selected_channels
+		return forumselect.selected_channels, forumselect.interaction

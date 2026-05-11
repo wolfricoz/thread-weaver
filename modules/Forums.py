@@ -22,6 +22,7 @@ from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.ConfigMapping import ConfigMapping
 from resources.configs.Limits import REGEX_MAX_LIMIT, REGEX_MIN_LIMIT
 from views.buttons.ConfirmButtons import ConfirmButtons
+from views.inputmodal import InputModal, get_input
 
 OPERATION_CHOICES = [
 	Choice(name="Add", value="add"),
@@ -49,7 +50,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = await ForumController.select_forums(interaction, "Select your forum channel(s) to add")
+		forums = await ForumController.select_forums(interaction, "Select the forum channel(s) to add")
 		for forum in forums :
 			ForumTransactions().add(
 				channel_id=forum.id,
@@ -69,7 +70,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 
-		forums = await ForumController.select_forums(interaction, "Select your forum channel(s) to remove")
+		forums = await ForumController.select_forums(interaction, "Select the forum channel(s) to remove")
 		for forum in forums :
 			ForumTransactions().delete(forum.id)
 		AutoMod().clear_cache()
@@ -165,7 +166,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 		forums = await ForumController.select_forums(interaction,
-		                                             f"Select your forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
+		                                             f"Select the forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
 		for forum in forums :
@@ -193,6 +194,57 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                    f"{operation.name}ed the word `{word}` {'to' if operation.value == 'add' else 'from'} the blacklist for {len(forums)} forum channel(s).",
 		                    ephemeral=True)
 
+	@app_commands.command(name="reminder", description="Sets a reminder for the selected forums")
+	@app_commands.choices(operation=OPERATION_CHOICES)
+	@app_commands.checks.has_permissions(manage_guild=True)
+	async def blacklist_word(self, interaction: discord.Interaction, operation: Choice[str]) :
+		"""
+		Sets a reminder for the selected forums, up to 2000 characters. Everytime a thread is opened, this reminder is posted.
+
+		Permissions:
+		- Manage guild
+		"""
+		forums, fm_interaction = await ForumController.select_forums(interaction,
+		                                             f"Select the forum channel(s) to {operation.value} the reminder!", keep_interaction=True)
+		controller = ForumTransactions()
+		success = 0
+		text = ""
+		if operation.value.lower() == "add" :
+			text = await get_input(
+				fm_interaction,
+				"Forum Reminder",
+				"What is your reminder?",
+				"Please enter a reminder for this forum.",
+				1999
+
+			)
+
+		for forum in forums :
+			match operation.value.lower() :
+
+				case "add" :
+					result = controller.update(forum.id, reminder=text)
+					if result is not None :
+						continue
+					success += 1
+
+				case "remove" :
+					result = controller.remove_reminder(forum.id)
+					if result is not None :
+						continue
+					success += 1
+				case "list" :
+					fm = controller.get(forum.id)
+					await send_message(interaction.channel, f"Reminder for {forum.name}:\n" + fm.reminder)
+
+		if operation.value.lower() == "list" :
+			return
+		await send_response(
+			interaction,
+			f"Action successful: **{operation.name}** reminder {'to' if operation.value == 'add' else 'from'} the forum for {len(forums)} channel(s).",
+			ephemeral=True
+		)
+
 	@app_commands.command(name="minimum_characters",
 	                      description="Sets the minimum character requirement for threads in the selected forums")
 	@app_commands.choices(operation=OPERATION_CHOICES)
@@ -205,7 +257,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 		forums = await ForumController.select_forums(interaction,
-		                                             f"Select your forum channel(s) to {operation.value} a minimum character requirement of `{character_count}`!")
+		                                             f"Select the forum channel(s) to {operation.value} a minimum character requirement of `{character_count}`!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
 
@@ -251,7 +303,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Premium access
 		"""
 		forums = await ForumController.select_forums(interaction,
-		                                             f"Select your forum channel(s) to {'allow' if allow else 'disallow'} duplicate threads!")
+		                                             f"Select the forum channel(s) to {'allow' if allow else 'disallow'} duplicate threads!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
 

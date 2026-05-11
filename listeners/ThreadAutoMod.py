@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import discord
 from discord.ext.commands import Cog, Bot
@@ -6,6 +7,8 @@ from discord_py_utilities.messages import send_message
 
 from classes.discordcontrollers.forum.AutoMod import AutoMod
 from classes.kernel.ConfigData import ConfigData
+from classes.kernel.Queue import Queue
+from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.ConfigMapping import ConfigMapping
 
 
@@ -32,7 +35,10 @@ class ThreadAutoMod(Cog) :
 				payload = f"`{thread.name}` created by {thread.owner.mention} in {thread.parent.mention}"
 			await send_message(channel, payload)
 
-		await AutoMod().run(message)
+		result = await AutoMod().run(message)
+		if not result:
+			return
+		Queue().add(self.send_reminder(thread.parent, thread))
 
 
 	@Cog.listener('on_message_edit')
@@ -62,7 +68,20 @@ class ThreadAutoMod(Cog) :
 		return message
 
 
+	# == Additional features ==
 
+	async def send_reminder(self, forum: discord.ForumChannel | None, thread: discord.Thread):
+		"""
+		Sends the configured reminder to the specified thread.
+		"""
+		cfg = ForumTransactions().get(forum.id)
+		if not cfg or not cfg.reminder or len(cfg.reminder) < 1 :
+			return None
+		embed = discord.Embed(
+			title="The staff would like to remind you about",
+			description=cfg.reminder,
+		)
+		return await send_message(thread, " ", embed=embed)
 
 async def setup(bot: Bot) :
 	await bot.add_cog(

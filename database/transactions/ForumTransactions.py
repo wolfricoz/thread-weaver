@@ -1,4 +1,4 @@
-from sqlalchemy import select, text
+from sqlalchemy import Select, select, text
 from sqlalchemy.orm import joinedload
 
 from database.database import ForumPatterns, Forums
@@ -24,7 +24,7 @@ class ForumTransactions(DatabaseTransactions):
 			self.commit(session)
 			return forum
 
-	def update(self, channel_id: int, name: str = None, minimum_characters: int = None, duplicates:bool = None) -> Forums | None :
+	def update(self, channel_id: int, name: str = None, minimum_characters: int = None, duplicates:bool = None, reminder: str = None) -> Forums | None :
 		with self.createsession() as session:
 			forum = self.get(channel_id)
 			if forum is None :
@@ -32,7 +32,8 @@ class ForumTransactions(DatabaseTransactions):
 			available_fields = {
 				"name": name,
 				"minimum_characters": minimum_characters,
-				"duplicates": duplicates
+				"duplicates": duplicates,
+				"reminder": reminder
 			}
 			for key, value in available_fields.items():
 				if value is not None:
@@ -106,3 +107,14 @@ class ForumTransactions(DatabaseTransactions):
 	def count_patterns(self, channel_id: int) -> int :
 		with self.createsession() as session:
 			return session.scalar(text("SELECT COUNT(*) FROM forum_patterns WHERE forum_id = :channel_id"),  {"channel_id": channel_id})
+
+	# === Reminders === #
+	# Adding the reminder is done through the update function; but the update function cant set fields to 'none'.
+	def remove_reminder(self, channel_id: int) -> bool :
+		with self.createsession() as session:
+			forum = self.get(channel_id, session)
+			if forum is None :
+				return False
+			forum.reminder = None
+			self.commit(session)
+			return True

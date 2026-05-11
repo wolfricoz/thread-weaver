@@ -6,7 +6,7 @@ import discord
 import re2
 from Levenshtein import ratio
 from discord import ForumChannel
-from discord_py_utilities.messages import send_message
+from discord_py_utilities.messages import await_message, send_message
 
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
@@ -75,7 +75,7 @@ class AutoMod(metaclass=Singleton) :
 			action, reason = await self.check_duplicate(message, thread, forum)
 		# the final judgement
 		logging.info(f"final action: {action}, reason: {reason}")
-		await self.check_action(message, thread, forum, action, reason)
+		return await self.check_action(message, thread, forum, action, reason)
 
 	def is_enabled(self, channel: discord.ForumChannel | discord.Thread) -> bool | ForumChannel :
 		"""This checks if the automoderation is enabled for the forum."""
@@ -150,7 +150,7 @@ class AutoMod(metaclass=Singleton) :
 
 	async def check_action(self, message, thread, forum, action, reason="") :
 		"""This checks the action that should be taken for the message."""
-		log = await ConfigData().get_channel(forum.guild.id, ConfigMapping.AUTOMOD_LOG, optional=True)
+		log = await ConfigData().get_channel(forum.guild, ConfigMapping.AUTOMOD_LOG, optional=True)
 		match action :
 			case AutoModActions.BLOCK :
 				embed = AutomodLayout(
@@ -169,7 +169,7 @@ class AutoMod(metaclass=Singleton) :
 					await thread.delete()
 				else :
 					await message.delete()
-				return None
+				return False
 			case AutoModActions.WARN :
 				embed = AutomodLayout(
 					rule_type="Content Warning",
@@ -186,9 +186,9 @@ class AutoMod(metaclass=Singleton) :
 				                         f"Message by {message.author.mention} triggered a content warning in `{thread.name}` but was not blocked, please check if the message breaks server policy.",
 				                         view=embed))
 
-				return None
+				return True
 			case AutoModActions.ALLOW :
-				return None
+				return True
 
 			case AutoModActions.REQUIRED :
 				embed = AutomodLayout(
@@ -206,7 +206,7 @@ class AutoMod(metaclass=Singleton) :
 					await thread.delete()
 				else :
 					await message.delete()
-				return None
+				return False
 
 			case AutoModActions.SHORT :
 				embed = AutomodLayout(
@@ -223,7 +223,7 @@ class AutoMod(metaclass=Singleton) :
 					await thread.delete()
 				else :
 					await message.delete()
-				return None
+				return False
 			case AutoModActions.DUPLICATE :
 				embed = AutomodLayout(
 					rule_type="Duplicate Message",
@@ -240,10 +240,10 @@ class AutoMod(metaclass=Singleton) :
 					await thread.delete()
 				else :
 					await message.delete()
-				return None
+				return False
 			case _ :
 				logging.warning(f"Action not recognized: {action}")
-				return None
+				return True
 
 	def is_staff(self, member: discord.Member) -> str | None :
 		"""This checks if the member is a staff member."""
@@ -292,6 +292,9 @@ class AutoMod(metaclass=Singleton) :
 		if found :
 			return AutoModActions.DUPLICATE, f"Your message is similar to a previous message in this channel: {found.jump_url}"
 		return None, None
+
+
+
 
 	# == Cache functions ==
 
