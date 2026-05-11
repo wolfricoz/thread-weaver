@@ -48,9 +48,9 @@ Permissions:
 
 ### `blacklist_word`
 
-**Usage:** `/forums blacklist_word <operation> <word>`
+**Usage:** `/forums blacklist_word <operation>`
 
-> Adds/Removes a word to the forum blacklist [simple]
+> Sets a reminder for the selected forums, up to 2000 characters. Everytime a thread is opened, this reminder is posted.
 
 Permissions:
 - Manage guild

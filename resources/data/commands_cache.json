@@ -1,6 +1,6 @@
 {
     "abandoned": "Toggle the removal of threads from users that left. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
-    "old": "Toggle the removal of threads after a x amount of days per forum. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
+    "old": "Toggle the removal of threads after a x amount of days of inactivity per forum. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "regex": "Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.\n\nPermissions:\n- Manage guild\n- Premium access",
     "missing_starter": "Toggle the removal of threads with missing starter message. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "channel": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
@@ -17,7 +17,7 @@
     "add": "Adds the chosen forum channel for the bot, enabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
     "remove": "Removes the chosen forum channel from the bot's database, disabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
     "add_pattern": "Add / Remove / List patterns for forum threads.\n\nPermissions:\n- Manage guild\n- Premium access",
-    "blacklist_word": "Adds/Removes a word to the forum blacklist [simple]\n\nPermissions:\n- Manage guild",
+    "blacklist_word": "Sets a reminder for the selected forums, up to 2000 characters. Everytime a thread is opened, this reminder is posted.\n\nPermissions:\n- Manage guild",
     "character_count": "Adds/Removes a minimum character requirement for threads in the selected forums.\n\nPermissions:\n- Manage guild",
     "duplicates": "Allow or disallow duplicate threads in the selected forums. Duplicate threads are threads with the same starter message content. This is determined on a user basis, so different users can create threads with the same content without being considered duplicates.\n\nPermissions:\n- Manage guild\n- Premium access",
     "stats": "Get stats for a forum",
@@ -25,5 +25,5 @@
     "copy": "Copy a forum with all settings!",
     "add_all": "Missing Documentation",
     "purge": "Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it.",
-    "acrhive_threads": "Archives all threads in the specified TextChannel.\n\n**Permissions:**\n- Requires `Manage Guild` permission."
+    "archive_threads": "Archives all threads in the specified TextChannel.\n\n**Permissions:**\n- Requires `Manage Guild` permission."
 }

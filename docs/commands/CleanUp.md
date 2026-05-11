@@ -52,7 +52,7 @@ Permissions:
 
 **Usage:** `/cleanup old <operation> <days>`
 
-> Toggle the removal of threads after a x amount of days per forum. Disabled by default
+> Toggle the removal of threads after a x amount of days of inactivity per forum. Disabled by default
 
 Permissions:
 - Manage guild

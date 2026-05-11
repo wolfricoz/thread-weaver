@@ -19,9 +19,9 @@ When inheriting from this class, the options shown in :class:`CogMeta`
 are equally valid here.
 
 
-### `acrhive_threads`
+### `archive_threads`
 
-**Usage:** `/general acrhive_threads <channel>`
+**Usage:** `/general archive_threads <channel>`
 
 > Archives all threads in the specified TextChannel.
 
