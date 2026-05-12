@@ -19,22 +19,30 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Try to drop the index safely
+    bind = op.get_bind()
+
+    # 1. Try to drop the index
     try:
-        op.drop_index(op.f('forum_cleanup_forum_id_key'), table_name='forum_cleanup')
+        with bind.begin_nested():
+            op.drop_index(op.f('forum_cleanup_forum_id_key'), table_name='forum_cleanup')
     except Exception as e:
         print(f"Skipping drop_index: {e}")
 
     # 2. Create the unique constraint
-    op.create_unique_constraint('forum_cleanup_forum_id_key_unique', 'forum_cleanup', ['forum_id', 'key'])
-
-    # 3. Try to drop the old foreign key safely
     try:
-        op.drop_constraint(op.f('forum_cleanup_forum_id_fkey'), 'forum_cleanup', type_='foreignkey')
+        with bind.begin_nested():
+            op.create_unique_constraint('forum_cleanup_forum_id_key_unique', 'forum_cleanup', ['forum_id', 'key'])
+    except Exception as e:
+        print(f"Skipping create_unique_constraint: {e}")
+
+    # 3. Try to drop the old foreign key
+    try:
+        with bind.begin_nested():
+            op.drop_constraint(op.f('forum_cleanup_forum_id_fkey'), 'forum_cleanup', type_='foreignkey')
     except Exception as e:
         print(f"Skipping drop_constraint: {e}")
 
-    # 4. Create the new foreign key and column
+    # 4. Final permanent changes (no nested block needed unless you want these optional too)
     op.create_foreign_key(None, 'forum_cleanup', 'forums', ['forum_id'], ['id'], ondelete='CASCADE')
     op.add_column('forums', sa.Column('reminder', sa.String(length=2000), nullable=True))
 
