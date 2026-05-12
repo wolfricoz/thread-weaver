@@ -43,7 +43,11 @@ def upgrade() -> None:
         print(f"Skipping drop_constraint: {e}")
 
     # 4. Final permanent changes (no nested block needed unless you want these optional too)
-    op.create_foreign_key(None, 'forum_cleanup', 'forums', ['forum_id'], ['id'], ondelete='CASCADE')
+    try:
+        with bind.begin_nested():
+            op.create_foreign_key(None, 'forum_cleanup', 'forums', ['forum_id'], ['id'], ondelete='CASCADE')
+    except Exception as e:
+        print(f"Skipping create_foreign_key: {e}")
     op.add_column('forums', sa.Column('reminder', sa.String(length=2000), nullable=True))
 
 def downgrade() -> None:
