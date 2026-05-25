@@ -44,7 +44,7 @@ class ServerTasks(Cog) :
 			try:
 				if not db_guild:
 					logging.info(f"Adding {guild.name} to the database...")
-					ServerTransactions().add(guild.id, guild.owner.name , guild.name, guild.member_count, await check_guild_invites(self.bot, guild, "invalid"), active=True)
+					ServerTransactions().add(guild.id, guild.owner.name , guild.name, guild.member_count, "", active=True)
 					continue
 				ServerTransactions().update(
 					guild.id,
