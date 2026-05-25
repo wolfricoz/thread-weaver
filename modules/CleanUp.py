@@ -51,7 +51,7 @@ class CleanUp(GroupCog, name="cleanup") :
 					continue
 				formatted_message += f"- {forum.name}\n"
 
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                  f"Please select the forum channel(s) where you want to {operation.value} cleanup of users that have left:")
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 
@@ -95,7 +95,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		_key = CleanUpTypes.OLD
 		forums = []
 		if not operation.value.lower() == "list" :
-			forums = await ForumController.select_forums(interaction,
+			forums, new_interaction = await ForumController.select_forums(interaction,
 			                                  f"Please select the forum channel(s) where you want to cleanup posts older than {days} days:")
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 
@@ -163,7 +163,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		_key = CleanUpTypes.INACTIVITY
 		forums = []
 		if not operation.value.lower() == "list" :
-			forums = await ForumController.select_forums(interaction,
+			forums, new_interaction = await ForumController.select_forums(interaction,
 			                                  f"Please select the forum channel(s) where you want to cleanup posts older than {days} days:")
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 
@@ -229,7 +229,7 @@ class CleanUp(GroupCog, name="cleanup") :
 		_key = CleanUpTypes.REGEX
 		forums = []
 		if not operation.value.lower() == "list" :
-			forums = await ForumController.select_forums(interaction,
+			forums, new_interaction = await ForumController.select_forums(interaction,
 			                                  f"Please select the forum channel(s) where you want to cleanup posts older than {days} days:")
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 
@@ -317,7 +317,7 @@ class CleanUp(GroupCog, name="cleanup") :
 					continue
 				formatted_message += f"- {forum.name}\n"
 
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                             f"Please select the forum channel(s) where you want to {operation.value} cleanup of posts that have a missing starter message:")
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
 

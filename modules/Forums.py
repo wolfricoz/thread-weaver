@@ -50,7 +50,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = await ForumController.select_forums(interaction, "Select the forum channel(s) to add")
+		forums, new_interaction = await ForumController.select_forums(interaction, "Select the forum channel(s) to add")
 		for forum in forums :
 			ForumTransactions().add(
 				channel_id=forum.id,
@@ -70,7 +70,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		"""
 
-		forums = await ForumController.select_forums(interaction, "Select the forum channel(s) to remove")
+		forums, new_interaction = await ForumController.select_forums(interaction, "Select the forum channel(s) to remove")
 		for forum in forums :
 			ForumTransactions().delete(forum.id)
 		AutoMod().clear_cache()
@@ -98,7 +98,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		"""
 		success = 0
 		controller: ForumPatternController = ForumPatternController(interaction.guild.id)
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                             "Please select the forum channel(s) you want to manage patterns for:")
 		match operation.value.lower() :
 			case "add" :
@@ -165,7 +165,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                             f"Select the forum channel(s) to {operation.value} the word `{word}` to the blacklist!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
@@ -256,7 +256,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		Permissions:
 		- Manage guild
 		"""
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                             f"Select the forum channel(s) to {operation.value} a minimum character requirement of `{character_count}`!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
@@ -302,7 +302,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		- Manage guild
 		- Premium access
 		"""
-		forums = await ForumController.select_forums(interaction,
+		forums, new_interaction = await ForumController.select_forums(interaction,
 		                                             f"Select the forum channel(s) to {'allow' if allow else 'disallow'} duplicate threads!")
 		blacklist = ForumPatternController(interaction.guild.id)
 		success = 0
