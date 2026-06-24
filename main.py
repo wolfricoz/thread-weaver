@@ -72,7 +72,11 @@ async def lifespan(app: FastAPI) :
 			except asyncio.CancelledError :
 				pass
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan,
+              docs_url=None,
+              redoc_url=None,
+              openapi_url=None,
+              )
 routers = []
 # Loops through all the routers in the api folder and includes them in the FastAPI app.
 for router in api.__all__ :
