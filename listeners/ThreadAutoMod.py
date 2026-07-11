@@ -20,6 +20,8 @@ class ThreadAutoMod(Cog) :
 	@Cog.listener('on_thread_create')
 	async def on_thread_create(self, thread: discord.Thread) :
 		"""This event is triggered when a thread is created."""
+		# We sleep 10 minutes, incase a post has a lot of pictures.
+		await asyncio.sleep(10)
 		message = await self.fetch_message(thread)
 		if message is False:
 			# the reason why we check none and false if because these have different meanings in this context.
