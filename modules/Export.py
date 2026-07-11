@@ -8,7 +8,7 @@ from discord_py_utilities.messages import send_message
 from classes.kernel.AccessControl import AccessControl
 from classes.support.ThreadArchive import ThreadArchive
 from views.buttons.ConfirmButtons import ConfirmButtons
-
+DEBUG = True
 
 class Export(GroupCog, name="export") :
 
@@ -107,8 +107,72 @@ class Export(GroupCog, name="export") :
 			return
 		await self.send_file(export_class, interaction, channel, False)
 
+	def build_export_embed(
+			self,
+			export_class: ThreadArchive,
+			channel: discord.Thread | discord.TextChannel | discord.ForumChannel,
+			website_details: dict | None = None,
+	) -> discord.Embed :
+		"""Builds the export summary embed. One field per stat, so it's easy to prune."""
+		r = export_class.report()
+		hb = export_class.human_bytes
 
-	async def send_file(self, export_class: ThreadArchive, interaction: discord.Interaction, channel: discord.Thread | discord.TextChannel | discord.ForumChannel, delete:bool = False) :
+		embed = discord.Embed(
+			title=f"Export: {channel.name}",
+			colour=discord.Colour.green(),
+		)
+
+		# --- Contents ---
+		embed.add_field(name="Threads", value=f"{r['threads']:,}", inline=True)
+		embed.add_field(name="Messages", value=f"{r['messages']:,}", inline=True)
+
+		embed.add_field(name="Images", value=f"{r['images']:,}", inline=True)
+		embed.add_field(name="Unique images", value=f"{r['images_unique']:,}", inline=True)
+		embed.add_field(name="Embeds", value=f"{r['embeds']:,}", inline=True)
+
+		embed.add_field(name="Other files", value=f"{r['links']:,}", inline=True)
+		embed.add_field(name="Attachments", value=f"{r['attachments']:,}", inline=True)
+		embed.add_field(name="\u200b", value="\u200b", inline=True)  # spacer, keeps the 3-column grid tidy
+		embed.add_field(name="Archive size", value=f"**{hb(r['zip_bytes'])}**", inline=True)
+
+		# --- Size ---
+		if DEBUG :
+			original = r["raw_bytes"] + r["dedup_saved"] + r["reencode_saved"]
+			embed.add_field(name="Original size", value=hb(original), inline=True)
+			embed.add_field(name="Total saved", value=f"−{hb(r['total_saved'])}", inline=True)
+
+			embed.add_field(name="Saved: dedup", value=f"−{hb(r['dedup_saved'])}", inline=True)
+			embed.add_field(name="Saved: re-encode", value=f"−{hb(r['reencode_saved'])}", inline=True)
+			embed.add_field(name="Saved: zip", value=f"−{hb(r['zip_saved'])}", inline=True)
+
+		# --- Range ---
+		if r["first_message"] and r["last_message"] :
+			embed.add_field(
+				name="Covers",
+				value=(
+					f"<t:{int(r['first_message'].timestamp())}:D> → "
+					f"<t:{int(r['last_message'].timestamp())}:D>"
+				),
+				inline=False,
+			)
+
+		# --- Delivery ---
+		if website_details :
+			embed.add_field(name="Download", value=f"[Click here]({website_details['link']})", inline=False)
+			embed.add_field(name="Password", value=f"`{website_details['password']}`", inline=False)
+			embed.set_footer(text=f"This link can only be used once · archived in {r['elapsed']:.1f}s")
+		else :
+			embed.set_footer(text=f"Archived in {r['elapsed']:.1f}s")
+
+		return embed
+
+	async def send_file(
+			self,
+			export_class: ThreadArchive,
+			interaction: discord.Interaction,
+			channel: discord.Thread | discord.TextChannel | discord.ForumChannel,
+			delete: bool = False,
+	) :
 		"""
 		:param export_class:
 		:param interaction:
@@ -117,34 +181,31 @@ class Export(GroupCog, name="export") :
 		:return:
 		"""
 		website_details = await export_class.upload()
+		embed = self.build_export_embed(export_class, channel, website_details)
 
 		try :
 			if website_details :
 				# too large for discord — it's on the download site instead
-				await send_message(
-					interaction.user,
-					f"Here is your export of `{channel.name}`:\n"
-					f"Link: {website_details['link']}\n"
-					f"Password: `{website_details['password']}`\n"
-					f"-# This link can only be used once.",
-				)
+				await send_message(interaction.user, embed=embed)
 			else :
 				await send_message(
 					interaction.user,
-					f"Here is your export of `{channel.name}`:",
+					embed=embed,
 					files=[discord.File(export_class.zip_path)],
 				)
 		except discord.Forbidden :
 			await send_message(
 				interaction.channel,
-				f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.",
+				f"{interaction.user.mention}, I was unable to send you the export in DMs. "
+				f"Please check your DM settings and try again.",
 			)
 		except Exception as e :
 			await send_message(
-				interaction.user,
+				interaction.channel,
 				f"{interaction.user.mention}, an error occurred while sending you the export: {e}",
 			)
 			logging.error(e, exc_info=True)
+			await export_class.clean_up()
 			return
 
 		await export_class.clean_up()
@@ -159,9 +220,3 @@ class Export(GroupCog, name="export") :
 				error_mode="ignore",
 			)
 			logging.error(e, exc_info=True)
-
-
-async def setup(bot: Bot) :
-	await bot.add_cog(
-		Export(bot),
-	)

@@ -14,3 +14,4 @@ uvicorn
 levenshtein
 gunicorn
 aiohttp
+pillow
