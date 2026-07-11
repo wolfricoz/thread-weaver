@@ -173,7 +173,7 @@ class ThreadArchive():
 
 	async def upload(self) -> dict | None :
 		# settings
-		base_url = os.getenv('DOWNLOAD_URL')
+		base_url = os.getenv('DOWNLOAD_URL_BACKEND')
 		url = f"{base_url}/register/{self.channel.guild.id}"
 
 		website_details = {}
@@ -185,8 +185,10 @@ class ThreadArchive():
 		mb = file_stats.st_size / (1024 * 1024)
 
 		# check if the file is large enough for the upload; smaller files are handled by discord.
-		# if mb < 24 :
-		# 	return None
+		if mb < 24 :
+			return None
+		if mb > 1000 :
+			return None
 
 		# create the payload
 		password = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
@@ -233,7 +235,7 @@ class ThreadArchive():
 							logging.error(f"Upload response missing 'guid': {results}")
 							return None
 
-						website_details["link"] = f"{base_url}/download/{self.channel.guild.id}/{guid}"
+						website_details["link"] = f"{os.getenv('DOWNLOAD_URL_FRONTEND')}/download/{self.channel.guild.id}/{guid}"
 						website_details["password"] = password
 
 			except aiohttp.ClientConnectorError :
