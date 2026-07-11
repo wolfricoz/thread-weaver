@@ -82,6 +82,10 @@ class ThreadArchive():
 			targets.append(self.channel)
 
 		for thread in targets:
+			# ensure we never lock the bot, as well as logging the process (for debugging)
+			logging.info(f"Processed {self.stats['threads']} threads")
+			await asyncio.sleep(0)
+
 			archive_dir, file_path = await self.create_dir(thread)
 			html = await self.thread_to_html(thread, archive_dir)
 			await self.create_file(thread, html, file_path)
@@ -185,7 +189,7 @@ class ThreadArchive():
 			sleep = 0
 		else:
 			header = f"<h1>{esc(thread.name)}</h1><hr>"
-			sleep = 0.5
+			sleep = 0.2
 
 		parts = [
 			"<!DOCTYPE html><html><head><meta charset='utf-8'>",
@@ -195,6 +199,9 @@ class ThreadArchive():
 		]
 
 		async for message in thread.history(limit=None, oldest_first=True):
+			if self.stats["messages"] % 100 == 0:
+				logging.info(f"Processed {self.stats["messages"]}")
+				await asyncio.sleep(0)
 			if sleep:
 				await asyncio.sleep(sleep)
 
