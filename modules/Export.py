@@ -43,27 +43,8 @@ class Export(GroupCog, name="export") :
 			return
 
 		await export_class.run()
-		try :
-			await send_message(interaction.user, f"Here is your export of `{thread.name}`:",
-			                   files=[discord.File(export_class.zip_path)])
-		except discord.Forbidden :
-			await send_message(interaction.channel,
-			                   f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.")
-		except Exception as e :
-			await send_message(interaction.user,
-			                   f"{interaction.user.mention}, an error occurred while sending you the export: {e}")
-			logging.error(e, exc_info=True)
-			return
-		await export_class.clean_up()
-		if not delete :
-			return
-		try :
-			await thread.delete()
-		except Exception as e :
-			await send_message(interaction.channel,
-			                   f"{interaction.user.mention}, an error occurred while deleting the thread: {e}",
-			                   error_mode="ignore")
-			logging.error(e, exc_info=True)
+		await self.send_file(export_class, interaction, thread, delete)
+
 
 	@app_commands.command(name="forum", description="Creates an export of an entire forum")
 	@app_commands.checks.has_permissions(manage_threads=True)
@@ -92,19 +73,8 @@ class Export(GroupCog, name="export") :
 			await send_message(interaction.user, f"Failed to create archive: {e}")
 			logging.error(e, exc_info=True)
 			return
+		await self.send_file(export_class, interaction, forum, False)
 
-		try :
-			await send_message(interaction.user, f"Here is your export of `{forum.name}`:",
-			                   files=[discord.File(export_class.zip_path)])
-		except discord.Forbidden :
-			await send_message(interaction.channel,
-			                   f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.")
-		except Exception as e :
-			await send_message(interaction.user,
-			                   f"{interaction.user.mention}, an error occurred while sending you the export: {e}")
-			logging.error(e, exc_info=True)
-			return
-		await export_class.clean_up()
 
 	@app_commands.command(name="channel", description="Creates an export of an entire channel")
 	@app_commands.checks.has_permissions(manage_threads=True)
@@ -135,18 +105,60 @@ class Export(GroupCog, name="export") :
 			logging.error(e, exc_info=True)
 
 			return
+		await self.send_file(export_class, interaction, channel, False)
+
+
+	async def send_file(self, export_class: ThreadArchive, interaction: discord.Interaction, channel: discord.Thread | discord.TextChannel | discord.ForumChannel, delete:bool = False) :
+		"""
+		:param export_class:
+		:param interaction:
+		:param channel:
+		:param delete:
+		:return:
+		"""
+		website_details = await export_class.upload()
+
 		try :
-			await send_message(interaction.user, f"Here is your export of `{channel.name}`:",
-			                   files=[discord.File(export_class.zip_path)])
+			if website_details :
+				# too large for discord — it's on the download site instead
+				await send_message(
+					interaction.user,
+					f"Here is your export of `{channel.name}`:\n"
+					f"Link: {website_details['link']}\n"
+					f"Password: `{website_details['password']}`\n"
+					f"-# This link can only be used once.",
+				)
+			else :
+				await send_message(
+					interaction.user,
+					f"Here is your export of `{channel.name}`:",
+					files=[discord.File(export_class.zip_path)],
+				)
 		except discord.Forbidden :
-			await send_message(interaction.channel,
-			                   f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.")
+			await send_message(
+				interaction.channel,
+				f"{interaction.user.mention}, I was unable to send you the export in DMs. Please check your DM settings and try again.",
+			)
 		except Exception as e :
-			await send_message(interaction.user,
-			                   f"{interaction.user.mention}, an error occurred while sending you the export: {e}")
+			await send_message(
+				interaction.user,
+				f"{interaction.user.mention}, an error occurred while sending you the export: {e}",
+			)
 			logging.error(e, exc_info=True)
 			return
+
 		await export_class.clean_up()
+		if not delete :
+			return
+		try :
+			await channel.delete()
+		except Exception as e :
+			await send_message(
+				interaction.channel,
+				f"{interaction.user.mention}, an error occurred while deleting the thread: {e}",
+				error_mode="ignore",
+			)
+			logging.error(e, exc_info=True)
 
 
 async def setup(bot: Bot) :

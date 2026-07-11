@@ -1,9 +1,13 @@
 import asyncio
 import logging
 import os.path
+import random
 import re
+import secrets
 import shutil
+import string
 
+import aiohttp
 import discord
 
 
@@ -166,6 +170,83 @@ class ThreadArchive():
 				dir_path = f"archives/{directory}"
 				shutil.rmtree(dir_path)
 		os.remove(self.zip_path)
+
+	async def upload(self) -> dict | None :
+		# settings
+		base_url = os.getenv('DOWNLOAD_URL')
+		url = f"{base_url}/register/{self.channel.guild.id}"
+
+		website_details = {}
+		if not os.path.exists(self.zip_path) :
+			return None
+
+		file_stats = os.stat(self.zip_path)
+
+		mb = file_stats.st_size / (1024 * 1024)
+
+		# check if the file is large enough for the upload; smaller files are handled by discord.
+		# if mb < 24 :
+		# 	return None
+
+		# create the payload
+		password = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+		with open(self.zip_path, 'rb') as f :
+			# multipart body: aiohttp builds the Content-Type header (with boundary) itself,
+			# so we must NOT set it manually here.
+			payload = aiohttp.FormData()
+			payload.add_field("name", self.name)
+			payload.add_field("password", password)
+			payload.add_field("max_downloads", "1")
+			payload.add_field("reference", str(self.channel.id))
+			payload.add_field(
+				"file",
+				f,
+				filename=os.path.basename(self.zip_path),
+				content_type="application/zip",
+			)
+
+			headers = {
+				"Authorization" : f"Bearer {os.getenv('DOWNLOAD_API')}"
+			}
+
+			# upload to site
+			try :
+				# 'async with' ensures the connection closes properly even if it fails
+				async with aiohttp.ClientSession() as session :
+					async with session.post(
+							url,
+							headers=headers,
+							data=payload,
+							timeout=aiohttp.ClientTimeout(total=300)  # 300s total timeout — a 24MB+ body needs room
+					) as response :
+
+						if not response.ok :
+							error_text = await response.text()
+							logging.error(f"Server group update failed: {response.status}: {error_text}")
+							return None
+
+						# 'await' here is key! It yields control back to the loop
+						results = await response.json()
+
+						guid = results.get("guid")
+						if not guid :
+							logging.error(f"Upload response missing 'guid': {results}")
+							return None
+
+						website_details["link"] = f"{base_url}/download/{self.channel.guild.id}/{guid}"
+						website_details["password"] = password
+
+			except aiohttp.ClientConnectorError :
+				logging.warning("Could not connect to the download API server. Is it running?")
+				return None
+			except asyncio.TimeoutError :
+				logging.warning("The download API request timed out.")
+				return None
+			except Exception as e :
+				logging.error(f"Error uploading download file: {e}", exc_info=True)
+				return None
+
+		return website_details
 
 
 
