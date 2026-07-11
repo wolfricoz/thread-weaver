@@ -220,3 +220,9 @@ class Export(GroupCog, name="export") :
 				error_mode="ignore",
 			)
 			logging.error(e, exc_info=True)
+
+
+async def setup(bot: Bot) :
+	await bot.add_cog(
+		Export(bot),
+	)
