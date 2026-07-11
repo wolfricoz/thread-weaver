@@ -189,7 +189,7 @@ class ThreadArchive():
 			sleep = 0
 		else:
 			header = f"<h1>{esc(thread.name)}</h1><hr>"
-			sleep = 0.2
+			sleep = 0.01
 
 		parts = [
 			"<!DOCTYPE html><html><head><meta charset='utf-8'>",
@@ -410,9 +410,9 @@ class ThreadArchive():
 
 		mb = os.stat(self.zip_path).st_size / (1024 * 1024)
 		logging.info(f"File is: {mb} MB")
-		if mb < 24:
-			logging.info("under 24 MB")
-			return None
+		# if mb < 24:
+		# 	logging.info("under 24 MB")
+		# 	return None
 
 		password = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		with open(self.zip_path, 'rb') as f:
