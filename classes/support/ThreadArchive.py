@@ -410,9 +410,9 @@ class ThreadArchive():
 
 		mb = os.stat(self.zip_path).st_size / (1024 * 1024)
 		logging.info(f"File is: {mb} MB")
-		# if mb < 24:
-		# 	logging.info("under 24 MB")
-		# 	return None
+		if mb < 24:
+			logging.info("under 24 MB")
+			return None
 
 		password = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		with open(self.zip_path, 'rb') as f:
