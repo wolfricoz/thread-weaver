@@ -455,8 +455,9 @@ class ThreadArchive():
 						)
 						website_details["password"] = password
 
-			except aiohttp.ClientConnectorError:
-				logging.warning("Could not connect to the download API server. Is it running?")
+			except aiohttp.ClientConnectorError as e:
+				logging.info(f"Connection details: {base_url}")
+				logging.warning(f"Could not connect to the download API server. Is it running? Error: {e}")
 				return None
 			except asyncio.TimeoutError:
 				logging.warning("The download API request timed out.")
