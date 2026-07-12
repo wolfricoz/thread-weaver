@@ -379,6 +379,18 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 		                   default_reaction_emoji=forum.default_reaction_emoji), priority=2)
 		await send_message(interaction.channel, f"Forum {forum.mention} copied to {f.mention}")
 
+
+	@app_commands.command(name="copytags", description="Copy the tags from a forum")
+	@app_commands.checks.has_permissions(manage_channels=True)
+	async def copy(self, interaction: discord.Interaction, original_forum: discord.ForumChannel, new_forum: discord.ForumChannel, name: str = None) :
+		"""Copy a forum with all settings!"""
+		await send_response(interaction, "Copying a forum with all settings!", ephemeral=True)
+
+		[await new_forum.create_tag(name=tag.name, moderated=tag.moderated, emoji=tag.emoji,
+		                    reason="Forum copied through forum manager") for tag in original_forum.available_tags if
+		 tag.name not in new_forum.available_tags]
+		await send_message(interaction.channel, f"Forum tags from {original_forum.mention} copied to {new_forum.mention}")
+
 	@app_commands.command(name="add_all", description="Adds all forums to the bot.")
 	@app_commands.checks.has_permissions(manage_channels=True)
 	async def add_all(self, interaction: discord.Interaction) :
