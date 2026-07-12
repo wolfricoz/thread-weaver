@@ -29,6 +29,7 @@ WEBP_QUALITY = 80
 SKIP_REENCODE = {"image/gif", "image/svg+xml", "image/webp"}
 
 
+# noinspection PyBroadException
 class ThreadArchive():
 	def __init__(self, name: str, channel: discord.Thread | discord.ForumChannel | discord.TextChannel):
 		self.threads = None
@@ -198,79 +199,129 @@ class ThreadArchive():
 			f"</head><body>{header}",
 		]
 
-		async for message in thread.history(limit=None, oldest_first=True):
-			if self.stats["messages"] % 100 == 0:
-				logging.info(f"Processed {self.stats["messages"]}")
+		async for message in thread.history(limit=None, oldest_first=True) :
+
+			if self.stats["messages"] % 100 == 0 :
+				logging.info(f"Processed {self.stats['messages']}")
 				await asyncio.sleep(0)
-			if sleep:
+			if sleep :
 				await asyncio.sleep(sleep)
 
-			self.stats["messages"] += 1
-			self.stats["authors"].add(message.author.id)
+			try :
+				self.stats["messages"] += 1
+				self.stats["authors"].add(message.author.id)
 
-			created = message.created_at
-			if self.stats["first_message"] is None or created < self.stats["first_message"]:
-				self.stats["first_message"] = created
-			if self.stats["last_message"] is None or created > self.stats["last_message"]:
-				self.stats["last_message"] = created
+				try :
+					created = message.created_at
+					if self.stats["first_message"] is None or created < self.stats["first_message"] :
+						self.stats["first_message"] = created
+					if self.stats["last_message"] is None or created > self.stats["last_message"] :
+						self.stats["last_message"] = created
+				except Exception :
+					logging.exception("Failed to update timestamp stats for message %s", getattr(message, "id", "?"))
 
-			parts.append(
-				f"<div class='message'><p><strong>{esc(str(message.author))}</strong> "
-				f"at {message.created_at.strftime('%m/%d/%Y %H:%M')}:</p>"
-			)
+				# --- message header ---
+				try :
+					parts.append(
+						f"<div class='message'><p><strong>{esc(str(message.author))}</strong> "
+						f"at {message.created_at.strftime('%m/%d/%Y %H:%M')}:</p>"
+					)
+				except Exception :
+					logging.exception("Failed to render header for message %s", getattr(message, "id", "?"))
+					parts.append("<div class='message'><p><strong>[unknown author]</strong></p>")
 
-			if message.content:
-				parts.append(f"<p>{esc(message.content)}</p>")
+				# --- message body ---
+				try :
+					if message.content :
+						parts.append(f"<p>{esc(message.content)}</p>")
+				except Exception :
+					logging.exception("Failed to render content for message %s", getattr(message, "id", "?"))
+					parts.append("<p><em>[content could not be rendered]</em></p>")
 
-			for embed in message.embeds:
-				self.stats["embeds"] += 1
-				color = f"#{embed.color.value:06x}" if embed.color else "#202225"
-				parts.append(f"<div class='embed' style='border-left: 4px solid {color};'>")
+				# --- embeds ---
+				for embed in message.embeds :
+					try :
+						self.stats["embeds"] += 1
+						color = f"#{embed.color.value:06x}" if embed.color else "#202225"
+						parts.append(f"<div class='embed' style='border-left: 4px solid {color};'>")
 
-				if embed.author and embed.author.name:
-					parts.append(f"<div class='embed-author'><strong>{esc(embed.author.name)}</strong></div>")
-				if embed.title:
-					parts.append(f"<div class='embed-title'>{esc(embed.title)}</div>")
-				if embed.description:
-					parts.append(f"<div class='embed-description'>{esc(embed.description)}</div>")
+						try :
+							if embed.author and embed.author.name :
+								parts.append(f"<div class='embed-author'><strong>{esc(embed.author.name)}</strong></div>")
+							if embed.title :
+								parts.append(f"<div class='embed-title'>{esc(embed.title)}</div>")
+							if embed.description :
+								parts.append(f"<div class='embed-description'>{esc(embed.description)}</div>")
+						except Exception :
+							logging.exception("Failed to render embed head on message %s", getattr(message, "id", "?"))
 
-				if embed.fields:
-					parts.append("<div class='embed-fields'>")
-					for field in embed.fields:
-						cls = "inline" if field.inline else "full"
-						parts.append(
-							f"<div class='embed-field {cls}'>"
-							f"<strong>{esc(field.name)}</strong><br>{esc(field.value)}</div>"
-						)
-					parts.append("</div>")
+						try :
+							if embed.fields :
+								parts.append("<div class='embed-fields'>")
+								for field in embed.fields :
+									try :
+										cls = "inline" if field.inline else "full"
+										parts.append(
+											f"<div class='embed-field {cls}'>"
+											f"<strong>{esc(field.name)}</strong><br>{esc(field.value)}</div>"
+										)
+									except Exception :
+										logging.exception("Failed to render embed field on message %s", getattr(message, "id", "?"))
+								parts.append("</div>")
+						except Exception :
+							logging.exception("Failed to render embed fields on message %s", getattr(message, "id", "?"))
 
-				if embed.image and embed.image.url:
-					parts.append(f"<img class='embed-image' src='{esc(embed.image.url)}' loading='lazy'>")
-				if embed.footer and embed.footer.text:
-					parts.append(f"<div class='embed-footer'>{esc(embed.footer.text)}</div>")
+						try :
+							if embed.image and embed.image.url :
+								parts.append(f"<img class='embed-image' src='{esc(embed.image.url)}' loading='lazy'>")
+							if embed.footer and embed.footer.text :
+								parts.append(f"<div class='embed-footer'>{esc(embed.footer.text)}</div>")
+						except Exception :
+							logging.exception("Failed to render embed image/footer on message %s", getattr(message, "id", "?"))
 
-				parts.append("</div>")
+						parts.append("</div>")
+					except Exception :
+						logging.exception("Failed to render embed on message %s", getattr(message, "id", "?"))
+						parts.append("</div>")  # keep the DOM balanced
 
-			if message.attachments:
-				parts.append("<div class='attachment-container'>")
-				for attachment in message.attachments:
-					self.stats["attachments"] += 1
-					ct = (attachment.content_type or "").lower()
-					if ct.startswith("image/"):
-						href = await self.store_image(attachment)
-						parts.append(
-							f"<a href='{href}' target='_blank'>"
-							f"<img src='{href}' class='attachment' loading='lazy'></a>"
-						)
-					else:
-						self.stats["links"] += 1
-						parts.append(
-							f"<p><a href='{esc(attachment.url)}' target='_blank'>"
-							f"{esc(attachment.filename)}</a></p>"
-						)
-				parts.append("</div>")
+				# --- attachments ---
+				try :
+					if message.attachments :
+						parts.append("<div class='attachment-container'>")
+						for attachment in message.attachments :
+							try :
+								self.stats["attachments"] += 1
+								ct = (attachment.content_type or "").lower()
+								if ct.startswith("image/") :
+									try :
+										href = await self.store_image(attachment)
+										parts.append(
+											f"<a href='{href}' target='_blank'>"
+											f"<img src='{href}' class='attachment' loading='lazy'></a>"
+										)
+									except Exception :
+										logging.exception("Failed to store image %s", getattr(attachment, "filename", "?"))
+										parts.append(
+											f"<p><a href='{esc(attachment.url)}' target='_blank'>"
+											f"{esc(attachment.filename)}</a> (image could not be stored)</p>"
+										)
+								else :
+									self.stats["links"] += 1
+									parts.append(
+										f"<p><a href='{esc(attachment.url)}' target='_blank'>"
+										f"{esc(attachment.filename)}</a></p>"
+									)
+							except Exception :
+								logging.exception("Failed to render attachment on message %s", getattr(message, "id", "?"))
+						parts.append("</div>")
+				except Exception :
+					logging.exception("Failed to render attachments on message %s", getattr(message, "id", "?"))
 
-			parts.append("</div><hr>")
+				parts.append("</div><hr>")
+
+			except Exception :
+				logging.exception("Failed to process message %s entirely; skipping", getattr(message, "id", "?"))
+				parts.append("<p><em>[message could not be rendered]</em></p></div><hr>")
 
 		parts.append("</body></html>")
 		return "".join(parts)
