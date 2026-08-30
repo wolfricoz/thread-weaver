@@ -30,6 +30,12 @@ class ForumTask :
 		self.archived: AsyncIterator[Thread] = forum.archived_threads(limit=None)
 		self.members: list[int] = [member.id for member in forum.guild.members]
 		self.bot = bot
+		expected = forum.guild.member_count or 0
+		self.members_reliable: bool = bool(self.members) and len(self.members) >= expected * 0.9
+		if not self.members_reliable :
+			logging.warning(
+				f"Member cache for {forum.guild.name} holds {len(self.members)} of {expected} members; "
+				f"skipping abandoned-post cleanup to avoid deleting threads from members we cannot see.")
 
 
 	async def start(self, clean_up_only = False) :
@@ -88,6 +94,8 @@ class ForumTask :
 
 
 	def check_user(self, member: discord.Member) -> tuple[bool, str] :
+		if not self.members_reliable :
+			return False, ""
 		r = "Deleted abandoned post from user (unable to fetch) because they are no longer in the server."
 		if member is None :
 			return True, r

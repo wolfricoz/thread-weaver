@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Type
 
 from sqlalchemy import Select, and_, exists, text
@@ -119,6 +119,26 @@ class ServerTransactions(DatabaseTransactions) :
 	def get_deleted(self) :
 		with self.createsession() as session :
 			return session.query(Servers).filter(Servers.deleted_at.isnot(None)).all()
+
+	def purge_expired(self, days: int = 30) -> int :
+		"""Permanently remove servers soft-deleted longer than `days` ago.
+
+		Leaving a guild only sets deleted_at, so a re-invite keeps its configuration.
+		Past the retention window we no longer have a reason to hold the guild owner's
+		id, so the row goes for good. Config, forums, patterns and cleanup rules follow
+		via cascade.
+		@param days:
+		@return: number of servers removed
+		"""
+		cutoff = datetime.now() - timedelta(days=days)
+		with self.createsession() as session :
+			expired = session.scalars(
+				Select(Servers).where(and_(Servers.deleted_at.isnot(None), Servers.deleted_at < cutoff))).all()
+			for server in expired :
+				logging.info(f"Retention: permanently removing {server.name} ({server.id}), left {server.deleted_at}")
+				session.delete(server)
+			self.commit(session)
+			return len(expired)
 
 	def count(self) :
 		with self.createsession() as session :

@@ -7,6 +7,8 @@ from discord_py_utilities.invites import check_guild_invites
 
 from classes.dashboard.Servers import Servers
 from classes.kernel.AccessControl import AccessControl
+from classes.support.PermissionNotice import PermissionNotice
+from classes.support.RetentionPolicy import enforce_data_retention_policy
 from database.transactions.ServerTransactions import ServerTransactions
 
 
@@ -16,10 +18,12 @@ class ServerTasks(Cog) :
 		self.bot = bot
 		# register tasks
 		self.update_servers.start()
+		self.enforce_retention.start()
 
 	def cog_unload(self) -> None:
 		# unregister tasks
 		self.update_servers.cancel()
+		self.enforce_retention.cancel()
 
 	pass
 
@@ -58,6 +62,9 @@ class ServerTasks(Cog) :
 			except Exception as e:
 				logging.error(f"Failed to update {guild.name}: {e}", exc_info=True)
 				continue
+			# Notify the server if we're missing any core permissions. Throttled to
+			# once per hour per distinct problem, so this hourly loop won't spam.
+			await PermissionNotice().check_guild(guild, source="loop")
 		# sync all the active servers with the dashboard
 		guilds = ServerTransactions().get_all(id_only=False)
 		await Servers().update_servers(guilds)
@@ -70,8 +77,24 @@ class ServerTasks(Cog) :
 
 
 
+	# Enforces the retention window published in the privacy policy. Runs daily;
+	# soft-deleted servers older than the window are removed permanently.
+	@tasks.loop(hours=24)
+	async def enforce_retention(self) :
+		logging.info("Enforcing data retention policy...")
+		try :
+			enforce_data_retention_policy()
+		except Exception as e :
+			logging.error(f"Failed to enforce data retention policy: {e}", exc_info=True)
+
+
 	@update_servers.before_loop
 	async def before_update_servers(self) :
+		# Wait until the bot is ready before starting the task
+		await self.bot.wait_until_ready()
+
+	@enforce_retention.before_loop
+	async def before_enforce_retention(self) :
 		# Wait until the bot is ready before starting the task
 		await self.bot.wait_until_ready()
 

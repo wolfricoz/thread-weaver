@@ -82,7 +82,7 @@ class Config(GroupCog, name="config", description="Commands for configuring the 
 			                       ))
 		return await send_response(interaction, f"{key.value} has been set to {action.value}", ephemeral=True)
 
-
+	
 
 async def setup(bot: Bot) :
 	await bot.add_cog(

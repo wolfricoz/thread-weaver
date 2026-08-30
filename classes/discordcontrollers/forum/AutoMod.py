@@ -148,6 +148,21 @@ class AutoMod(metaclass=Singleton) :
 			return AutoModActions.REQUIRED, f"Your message is missing required content: `{regex.pattern}`"
 		return None, None
 
+	async def _delete_offending(self, message, thread, forum) :
+		"""Delete the offending starter thread or message, notifying the server if
+		the bot lacks the permission to do so."""
+		try :
+			if message.id == thread.id :
+				await thread.delete()
+			else :
+				await message.delete()
+		except discord.Forbidden :
+			# Lazy import to avoid a circular import at module load.
+			from classes.support.PermissionNotice import PermissionNotice
+			perm = "manage_threads" if message.id == thread.id else "manage_messages"
+			logging.warning("AutoMod missing %s in %s (%s)", perm, forum.guild.name, forum.guild.id)
+			await PermissionNotice().notify(forum.guild, [perm], channel=forum, source="event")
+
 	async def check_action(self, message, thread, forum, action, reason="") :
 		"""This checks the action that should be taken for the message."""
 		log = await ConfigData().get_channel(forum.guild, ConfigMapping.AUTOMOD_LOG, optional=True)
@@ -164,11 +179,7 @@ class AutoMod(metaclass=Singleton) :
 					Queue().add(
 						send_message(log, f"Message by {message.author.mention} was blocked in `{thread.name}`", view=embed))
 
-				if message.id == thread.id :
-
-					await thread.delete()
-				else :
-					await message.delete()
+				await self._delete_offending(message, thread, forum)
 				return False
 			case AutoModActions.WARN :
 				embed = AutomodLayout(
@@ -202,10 +213,7 @@ class AutoMod(metaclass=Singleton) :
 					Queue().add(
 						send_message(log, f"Message by {message.author.mention} did not meet the requirements in `{thread.name}`",
 						             view=embed))
-				if message.id == thread.id :
-					await thread.delete()
-				else :
-					await message.delete()
+				await self._delete_offending(message, thread, forum)
 				return False
 
 			case AutoModActions.SHORT :
@@ -219,10 +227,7 @@ class AutoMod(metaclass=Singleton) :
 				Queue().add(send_message(log,
 				                         f"Message by {message.author.mention} was blocked in `{thread.name}` because it didn't meet the minimum requirements.",
 				                         view=embed))
-				if message.id == thread.id :
-					await thread.delete()
-				else :
-					await message.delete()
+				await self._delete_offending(message, thread, forum)
 				return False
 			case AutoModActions.DUPLICATE :
 				embed = AutomodLayout(
@@ -236,10 +241,7 @@ class AutoMod(metaclass=Singleton) :
 					Queue().add(send_message(log,
 					                         f"Message by {message.author.mention} was blocked in `{thread.name}` because it was a duplicate",
 					                         view=embed))
-				if message.id == thread.id :
-					await thread.delete()
-				else :
-					await message.delete()
+				await self._delete_offending(message, thread, forum)
 				return False
 			case _ :
 				logging.warning(f"Action not recognized: {action}")
