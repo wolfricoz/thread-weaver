@@ -6,7 +6,6 @@ import discord
 import re2
 from Levenshtein import ratio
 from discord import ForumChannel
-from discord_py_utilities.messages import await_message, send_message
 
 from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
@@ -16,6 +15,18 @@ from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions
 from resources.configs.ConfigMapping import ConfigMapping
 from views.v2.AutomodLayout import AutomodLayout
+
+
+async def send_layout(destination, view: discord.ui.LayoutView) :
+	"""Sends a components v2 layout. These messages may not carry a `content`
+	field, so they cannot go through `send_message`, which always sends one."""
+	if destination is None :
+		return None
+	try :
+		return await destination.send(view=view)
+	except discord.Forbidden :
+		logging.warning(f"Missing permission to send automod layout to {destination}")
+		return None
 
 
 class AutoModActions(StrEnum) :
@@ -168,79 +179,91 @@ class AutoMod(metaclass=Singleton) :
 		log = await ConfigData().get_channel(forum.guild, ConfigMapping.AUTOMOD_LOG, optional=True)
 		match action :
 			case AutoModActions.BLOCK :
-				embed = AutomodLayout(
+				Queue().add(send_layout(message.author, AutomodLayout(
 					rule_type="Forbidden Content",
 					reason=reason,
 					title=thread.name,
 					content=message.content,
-				)
-				Queue().add(send_message(message.author, f" ", view=embed))
+				)))
 				if log :
-					Queue().add(
-						send_message(log, f"Message by {message.author.mention} was blocked in `{thread.name}`", view=embed))
+					Queue().add(send_layout(log, AutomodLayout(
+						rule_type="Forbidden Content",
+						reason=reason,
+						title=thread.name,
+						content=message.content,
+						note=f"Message by {message.author.mention} was blocked in `{thread.name}`",
+					)))
 
 				await self._delete_offending(message, thread, forum)
 				return False
 			case AutoModActions.WARN :
-				embed = AutomodLayout(
-					rule_type="Content Warning",
-					reason=reason,
-					title=thread.name,
-					content=message.content,
-				)
-				override = ConfigData().get_channel(forum.guild.id, ConfigMapping.AUTOMOD_WARN_LOG, optional=True)
+				override = await ConfigData().get_channel(forum.guild, ConfigMapping.AUTOMOD_WARN_LOG, optional=True)
 				if override :
 					log = override
 				if not log :
 					return None
-				Queue().add(send_message(log,
-				                         f"Message by {message.author.mention} triggered a content warning in `{thread.name}` but was not blocked, please check if the message breaks server policy.",
-				                         view=embed))
+				Queue().add(send_layout(log, AutomodLayout(
+					rule_type="Content Warning",
+					reason=reason,
+					title=thread.name,
+					content=message.content,
+					note=f"Message by {message.author.mention} triggered a content warning in `{thread.name}` but was not blocked, please check if the message breaks server policy.",
+				)))
 
 				return True
 			case AutoModActions.ALLOW :
 				return True
 
 			case AutoModActions.REQUIRED :
-				embed = AutomodLayout(
+				Queue().add(send_layout(message.author, AutomodLayout(
 					rule_type="Missing Required Content",
 					reason=reason,
 					title=thread.name,
 					content=message.content,
-				)
-				Queue().add(send_message(message.author, f" ", view=embed))
+				)))
 				if log :
-					Queue().add(
-						send_message(log, f"Message by {message.author.mention} did not meet the requirements in `{thread.name}`",
-						             view=embed))
+					Queue().add(send_layout(log, AutomodLayout(
+						rule_type="Missing Required Content",
+						reason=reason,
+						title=thread.name,
+						content=message.content,
+						note=f"Message by {message.author.mention} did not meet the requirements in `{thread.name}`",
+					)))
 				await self._delete_offending(message, thread, forum)
 				return False
 
 			case AutoModActions.SHORT :
-				embed = AutomodLayout(
+				Queue().add(send_layout(message.author, AutomodLayout(
 					rule_type="Message Too Short",
 					reason=reason,
 					title=thread.name,
 					content=message.content,
-				)
-				Queue().add(send_message(message.author, f" ", view=embed))
-				Queue().add(send_message(log,
-				                         f"Message by {message.author.mention} was blocked in `{thread.name}` because it didn't meet the minimum requirements.",
-				                         view=embed))
+				)))
+				if log :
+					Queue().add(send_layout(log, AutomodLayout(
+						rule_type="Message Too Short",
+						reason=reason,
+						title=thread.name,
+						content=message.content,
+						note=f"Message by {message.author.mention} was blocked in `{thread.name}` because it didn't meet the minimum requirements.",
+					)))
 				await self._delete_offending(message, thread, forum)
 				return False
 			case AutoModActions.DUPLICATE :
-				embed = AutomodLayout(
+				Queue().add(send_layout(message.author, AutomodLayout(
 					rule_type="Duplicate Message",
 					reason=reason,
 					title=thread.name,
 					content=message.content,
-				)
-				Queue().add(send_message(message.author, f" ", view=embed))
+				)))
 				if log :
-					Queue().add(send_message(log,
-					                         f"Message by {message.author.mention} was blocked in `{thread.name}` because it was a duplicate",
-					                         view=embed))
+					Queue().add(send_layout(log, AutomodLayout(
+						rule_type="Duplicate Message",
+						reason=reason,
+						title=thread.name,
+						content=message.content,
+						note=f"Message by {message.author.mention} was blocked in `{thread.name}` because it was a duplicate",
+					)))
 				await self._delete_offending(message, thread, forum)
 				return False
 			case _ :

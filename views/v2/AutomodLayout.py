@@ -5,12 +5,15 @@ from discord.ui import Separator, TextDisplay
 class AutomodLayout(discord.ui.LayoutView) :
 	"""This is the 2.0 embed layout for onboarding messages."""
 
-	def __init__(self, rule_type: str, reason: str, title: str, content: str) :
+	def __init__(self, rule_type: str, reason: str, title: str, content: str, note: str = None) :
 		super().__init__(timeout=None)
 
+		# Components v2 messages cannot carry a `content` field, so any extra
+		# context (used for the log channel) has to live inside the layout.
 		container = discord.ui.Container(
 			TextDisplay(f"## Automod violation: {rule_type}"),
 			Separator(),
+			*((TextDisplay(note), Separator()) if note else ()),
 			TextDisplay(f"Thread Title:\n{title}"),
 			Separator(),
 			TextDisplay(f"Messsage Content:\n{content}"),
