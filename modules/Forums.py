@@ -16,6 +16,7 @@ from classes.kernel.AccessControl import AccessControl
 from classes.kernel.ConfigData import ConfigData
 from classes.kernel.Queue import Queue
 from classes.support.ThreadArchive import ThreadArchive
+from classes.support.Transformers import ForumOption
 from classes.support.regex import verify_regex_length, verify_regex_pattern
 from data.enums.PatternTypes import ForumPatterns
 from database.transactions.ForumTransactions import ForumTransactions
@@ -321,7 +322,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 
 	@app_commands.command(name='stats')
 	@app_commands.checks.has_permissions(manage_channels=True)
-	async def stats(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
+	async def stats(self, interaction: discord.Interaction, forum: ForumOption) :
 		"""Get stats for a forum"""
 		await send_response(interaction, f"Getting stats for {forum.name}", ephemeral=True)
 		embed = discord.Embed(title=f"Stats for {forum.name}")
@@ -342,7 +343,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 	# === Utility (free/paid ) ===
 	@app_commands.command(name="recover", description="Recover archived posts")
 	@app_commands.checks.has_permissions(manage_channels=True)
-	async def recover(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
+	async def recover(self, interaction: discord.Interaction, forum: ForumOption) :
 		"""Recover archived posts"""
 		await send_response(interaction, f"Recovering archived posts for {forum.name}, this may take some time.",
 		                    ephemeral=True)
@@ -365,7 +366,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 	# TODO: Also copy over configurations like patterns, minimum character count, etc.
 	@app_commands.command(name="copy", description="Copy a forum with all settings!")
 	@app_commands.checks.has_permissions(manage_channels=True)
-	async def copy(self, interaction: discord.Interaction, forum: discord.ForumChannel, name: str = None) :
+	async def copy(self, interaction: discord.Interaction, forum: ForumOption, name: str = None) :
 		"""Copy a forum with all settings!"""
 		await send_response(interaction, "Copying a forum with all settings!", ephemeral=True)
 		f = await forum.clone(name=f"{name if name else forum.name}-Copy", category=forum.category)
@@ -382,7 +383,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 
 	@app_commands.command(name="copytags", description="Copy the tags from a forum")
 	@app_commands.checks.has_permissions(manage_channels=True)
-	async def copy(self, interaction: discord.Interaction, original_forum: discord.ForumChannel, new_forum: discord.ForumChannel, name: str = None) :
+	async def copy(self, interaction: discord.Interaction, original_forum: ForumOption, new_forum: ForumOption, name: str = None) :
 		"""Copy a forum with all settings!"""
 		await send_response(interaction, "Copying a forum with all settings!", ephemeral=True)
 
@@ -401,7 +402,7 @@ class Forums(GroupCog, name="forum", description="Forum management commands") :
 
 	# TODO: upgrade this command to work with archived threads and add an option to notify the thread starter with the contents of their thread before purging, as well as a confirmation button to prevent accidental purges AND add the option to create an export of each purged thread.
 	@app_commands.command(name="purge")
-	async def purge(self, interaction: discord.Interaction, forum: discord.ForumChannel, notify_user: bool = True,
+	async def purge(self, interaction: discord.Interaction, forum: ForumOption, notify_user: bool = True,
 	                archive: bool = False) :
 		"""Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it."""
 		await ConfirmButtons().send_confirmation(interaction,

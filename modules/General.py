@@ -5,6 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext.commands import Cog, Bot
 
+from classes.support.Transformers import TextChannelOption
 from database.transactions.ServerTransactions import ServerTransactions
 
 # Published in docs/privacypolicy.md; keep the two in step.
@@ -20,7 +21,7 @@ class General(Cog) :
 	@app_commands.command(name="archive_threads",
 	                      description="Archives all threads in the specified TextChannel")
 	@app_commands.checks.has_permissions(manage_guild=True)
-	async def archive_threads(self, interaction: discord.Interaction, channel: discord.TextChannel) :
+	async def archive_threads(self, interaction: discord.Interaction, channel: TextChannelOption) :
 		"""
 		Archives all threads in the specified TextChannel.
 

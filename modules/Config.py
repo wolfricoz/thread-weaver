@@ -7,6 +7,7 @@ from discord_py_utilities.messages import send_response
 from classes.kernel.ConfigData import ConfigData
 from classes.kernel.config.utils import ConfigUtils
 from classes.kernel.Queue import Queue
+from classes.support.Transformers import TextChannelOption
 from database.transactions.ConfigTransactions import ConfigTransactions
 from resources.configs.ConfigMapping import channels, roles, toggles
 
@@ -23,7 +24,7 @@ class Config(GroupCog, name="config", description="Commands for configuring the 
 	])
 	@app_commands.checks.has_permissions(manage_guild=True)
 	@app_commands.guild_only()
-	async def channel(self, interaction: discord.Interaction, option: Choice[str], channel: discord.TextChannel) :
+	async def channel(self, interaction: discord.Interaction, option: Choice[str], channel: TextChannelOption) :
 		"""
 		Channel configuration for Forum Manager. This command allows you to set the channels used by the bot for various features. For example, you can set the channel where the bot will log automod actions.
 

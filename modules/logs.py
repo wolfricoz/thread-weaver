@@ -25,7 +25,9 @@ from discord.app_commands import AppCommandError, CheckFailure, command
 from discord.ext import commands
 from discord_py_utilities.exceptions import NoPermissionException
 from discord_py_utilities.messages import send_message, send_response
-from discord_py_utilities.permissions import find_first_accessible_text_channel
+from discord_py_utilities.permissions import check_missing_channel_permissions, find_first_accessible_text_channel
+
+from classes.support.Transformers import ChannelAccessError
 from dotenv import load_dotenv
 
 from data.env.loader import env
@@ -230,6 +232,48 @@ class Logging(commands.Cog) :
 		except Exception as e:
 			logging.error(e)
 
+	async def explain_channel_transformer_error(self, error: app_commands.TransformerError) -> str :
+		"""Work out *why* a channel/thread option could not be resolved, and say so.
+
+		Discord sends channel options as a partial object that discord.py resolves against the
+		bot's cache. Resolution returns None when the channel is not in cache, which happens for
+		two very different reasons: the bot cannot see the channel at all, or the channel is real
+		but uncached (archived threads are the common case, since only active threads are cached).
+		We fetch it from the API to tell those apart and give the user something actionable.
+		"""
+		value = error.value
+		name = discord.utils.escape_markdown(str(getattr(value, 'name', value)))
+		generic = f"Could not resolve `{name}`. Please pick it from the list Discord suggests, or use its ID."
+		if not hasattr(value, 'fetch') :
+			return generic
+
+		try :
+			resolved = await value.fetch()
+		except discord.Forbidden :
+			return (f"I can't access `{name}`. Forum Manager is missing the **View Channel** permission there "
+			        f"(or its parent channel). Grant it access and run the command again.")
+		except discord.NotFound :
+			return f"`{name}` no longer exists — it was probably deleted."
+		except discord.HTTPException as e :
+			logging.warning(f"Could not fetch channel {getattr(value, 'id', '?')} while handling a TransformerError: {e}")
+			return generic
+
+		# The channel exists and we can fetch it, so check the permissions the command will need.
+		try :
+			missing = check_missing_channel_permissions(resolved, ["view_channel", "read_message_history"])
+		except Exception as e :
+			logging.warning(f"Could not check permissions for {resolved!r}: {e}")
+			missing = []
+		if missing :
+			pretty = ", ".join(f"**{perm.replace('_', ' ').title()}**" for perm in missing)
+			return f"I can't access `{name}`. Forum Manager is missing {pretty} in that channel."
+
+		if isinstance(resolved, discord.Thread) and resolved.archived :
+			return (f"`{name}` is archived, so it isn't loaded and Discord can't hand it to the command. "
+			        f"Unarchive it (or post in it) and run the command again.")
+
+		return generic
+
 	async def on_app_command_error(
 			self,
 			interaction: Interaction,
@@ -249,19 +293,28 @@ class Logging(commands.Cog) :
 		if isinstance(error, CheckFailure) :
 			return await self.on_fail_message(interaction, "You do not have permission.")
 
-		if isinstance(error.original, discord.Forbidden) :
+		# CommandInvokeError/TransformerError wrap the real exception in .original, but not
+		# every AppCommandError has that attribute (e.g. TransformerError), so unwrap safely.
+		original = getattr(error, 'original', None)
+
+		if isinstance(original, discord.Forbidden) :
 			return await self.on_fail_message(interaction,
 			                                  f"The bot does not have sufficient permission to run this command. Please check: \n* if the bot has permission to post in the channel \n* if the bot is above the role its trying to assign\n* If trying to ban, ensure the bot has the ban permission",
 			                                  owner=True)
 
+		# Raised by our own channel transformers, which already worked out what to tell the user.
+		if isinstance(error, ChannelAccessError) :
+			return await self.on_fail_message(interaction, str(error))
+
 		if isinstance(error, app_commands.TransformerError) :
+			# The option could not be resolved (usually an uncached channel or a stale autocomplete pick).
+			if error.type is discord.AppCommandOptionType.channel :
+				return await self.on_fail_message(interaction, await self.explain_channel_transformer_error(error))
+			target = getattr(error.type, 'name', 'value').replace('_', ' ')
 			return await self.on_fail_message(interaction,
-			                                  "Failed to transform given input to member, please select the user from the list, or use the user's ID.", )
+			                                  f"Failed to read `{discord.utils.escape_markdown(str(error.value))}` as a {target}. Please pick it from the list Discord suggests, or use its ID.")
 		if isinstance(error, commands.MemberNotFound) :
 			return await self.on_fail_message(interaction, "User not found.")
-		if isinstance(error, discord.app_commands.errors.TransformerError) :
-			return await self.on_fail_message(interaction,
-			                                  "Failed to transform given input to member, please select the user from the list, or use the user's ID.")
 		if isinstance(error, discord.Forbidden) :
 			return await self.on_fail_message(interaction,
 			                                  f"The bot does not have sufficient permission to run this command. Please check: \n* if the bot has permission to post in the channel \n* if the bot is above the role its trying to assign")

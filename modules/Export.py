@@ -7,6 +7,7 @@ from discord_py_utilities.messages import send_message
 
 from classes.kernel.AccessControl import AccessControl
 from classes.support.ThreadArchive import ThreadArchive
+from classes.support.Transformers import ForumOption, TextChannelOption, ThreadOption
 from views.buttons.ConfirmButtons import ConfirmButtons
 DEBUG = True
 
@@ -18,7 +19,7 @@ class Export(GroupCog, name="export") :
 	@app_commands.command(name="thread", description="Creates an export of a specific thread")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
-	async def thread(self, interaction: discord.Interaction, thread: discord.Thread, delete: bool = False) :
+	async def thread(self, interaction: discord.Interaction, thread: ThreadOption, delete: bool = False) :
 		"""
 		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
@@ -49,7 +50,7 @@ class Export(GroupCog, name="export") :
 	@app_commands.command(name="forum", description="Creates an export of an entire forum")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
-	async def forum(self, interaction: discord.Interaction, forum: discord.ForumChannel) :
+	async def forum(self, interaction: discord.Interaction, forum: ForumOption) :
 		"""
 		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
@@ -79,7 +80,7 @@ class Export(GroupCog, name="export") :
 	@app_commands.command(name="channel", description="Creates an export of an entire channel")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
-	async def channel(self, interaction: discord.Interaction, channel: discord.TextChannel) :
+	async def channel(self, interaction: discord.Interaction, channel: TextChannelOption) :
 		"""
 		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
