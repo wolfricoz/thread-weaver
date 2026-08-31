@@ -110,11 +110,14 @@ class ServerTransactions(DatabaseTransactions) :
 			return [sid[0] for sid in session.query(Servers.id).filter(and_(Servers.deleted_at.is_(None))).all()]
 
 	def get_premium_ids(self) :
-		"""
+		"""Ids of servers with premium that has not yet expired.
+		@return:
 		"""
 		with self.createsession() as session :
 			return [sid[0] for sid in
-			        session.query(Servers.id).filter(and_(Servers.premium.isnot(None), Servers.deleted_at.is_(None))).all()]
+			        session.query(Servers.id).filter(and_(Servers.premium.isnot(None),
+			                                              Servers.premium > datetime.now(),
+			                                              Servers.deleted_at.is_(None))).all()]
 
 	def get_deleted(self) :
 		with self.createsession() as session :

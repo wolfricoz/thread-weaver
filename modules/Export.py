@@ -1,7 +1,7 @@
 import logging
 
 import discord
-from discord import app_commands
+from discord import TextChannel, app_commands
 from discord.ext.commands import Bot, GroupCog
 from discord_py_utilities.messages import send_message
 
@@ -47,12 +47,41 @@ class Export(GroupCog, name="export") :
 		await self.send_file(export_class, interaction, thread, delete)
 
 
+	@app_commands.command(name="threads", description="Creates an export of all threads from a specific channel")
+	@app_commands.checks.has_permissions(manage_threads=True)
+	@AccessControl().check_premium()
+	async def threads(self, interaction: discord.Interaction, channel: TextChannel) :
+		"""
+		Creates an export of all threads in a specific channel. This will create a .zip file containing the channel's threads messages and attachments. The file will be sent to the user who invoked the command.
+
+		**Permissions:**
+		- `Manage Threads`
+		- `Premium Access`
+		"""
+		buttons = ConfirmButtons(
+			confirm_message=f"Creating an export of `{channel.name}`, this may take a while... The results will be sent to your DMs")
+		result = await buttons.send_confirmation(interaction,
+		                                         f"Are you sure you want to export `{channel.name}`? This will create a .zip file containing the thread's messages and image attachments. if you delete the thread after export, non-image attachments may not work as they rely on the url provided by discord, which is deleted when the message/thread is deleted. Threads with a large amount of images may fail to export due to the size of the .zip file. If you have any issues with the export, please contact support.\n\n**note** Forums have a high chance of failing to export due to the large amount of messages and attachments they can contain. It is recommended to export individual threads within the forum instead of the entire forum to ensure a successful export.",
+		                                         )
+		if not result :
+			logging.info(f"{interaction.user} cancelled the export of {channel.name}")
+			return
+		try:
+			export_class = ThreadArchive(interaction.guild.name + "_" + channel.name, channel=channel)
+			await export_class.run(threads_only=True)
+
+		except Exception as e:
+			await send_message(interaction.user, f"Failed to create archive: {e}")
+			logging.error(e, exc_info=True)
+			return
+		await self.send_file(export_class, interaction, channel, False)
+
 	@app_commands.command(name="forum", description="Creates an export of an entire forum")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
 	async def forum(self, interaction: discord.Interaction, forum: ForumOption) :
 		"""
-		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
+		Creates an export of a specific forum. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
 		**Permissions:**
 		- `Manage Threads`
@@ -80,7 +109,7 @@ class Export(GroupCog, name="export") :
 	@app_commands.command(name="channel", description="Creates an export of an entire channel")
 	@app_commands.checks.has_permissions(manage_threads=True)
 	@AccessControl().check_premium()
-	async def channel(self, interaction: discord.Interaction, channel: TextChannelOption) :
+	async def channel(self, interaction: discord.Interaction, channel: TextChannelOption, channel_only: bool) -> None :
 		"""
 		Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.
 
@@ -99,7 +128,7 @@ class Export(GroupCog, name="export") :
 		try:
 			export_class = ThreadArchive(interaction.guild.name + "_" + channel.name, channel=channel)
 
-			await export_class.run()
+			await export_class.run(channel_only=channel_only)
 
 		except Exception as e:
 			await send_message(interaction.user, f"Failed to create archive: {e}")

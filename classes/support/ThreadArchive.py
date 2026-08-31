@@ -71,15 +71,15 @@ class ThreadArchive():
 	def sanitize_filename(self, filename: str) -> str:
 		return re.sub(r'[\\/*?:"<>|]', "", filename).strip()
 
-	async def run(self):
+	async def run(self, threads_only = False, channel_only= False):
 		"""Main entrypoint: build the per-thread HTML, then zip it all up."""
 		started = time.monotonic()
 
-		await self.get_threads()
+		await self.get_threads(channel_only=channel_only)
 		await self.write_stylesheet()
 
 		targets = list(self.threads)
-		if isinstance(self.channel, discord.TextChannel) and self.channel not in targets:
+		if isinstance(self.channel, discord.TextChannel) and self.channel not in targets and not threads_only:
 			targets.append(self.channel)
 
 		for thread in targets:
@@ -98,9 +98,17 @@ class ThreadArchive():
 		self.stats["elapsed"] = time.monotonic() - started
 		logging.info(f"Finished creating archive! {self.summary_line()}")
 
-	async def get_threads(self) -> None:
-		self.threads = [self.channel]
-		if self.channel.type == discord.ChannelType.forum:
+	async def get_threads(self, channel_only=True) -> None:
+		if channel_only:
+			self.threads = [self.channel]
+			return
+		if self.channel.type == discord.ChannelType.public_thread:
+			self.threads = [self.channel]
+			return
+
+
+
+		if self.channel.type == discord.ChannelType.forum or self.channel.type == discord.ChannelType.text:
 			logging.info(f"Getting threads for {self.channel.name}")
 			self.threads = self.channel.threads + [
 				thread async for thread in self.channel.archived_threads(limit=None)
