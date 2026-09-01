@@ -30,3 +30,22 @@ are equally valid here.
 
 ---
 
+### `support_invite`
+
+**Usage:** `/general support_invite`
+
+> Returns the support server's invite, or None if it isn't available.
+
+---
+
+### `privacy`
+
+**Usage:** `/general privacy`
+
+> Shows what data Forum Manager holds about you and how to have it removed.
+
+**Permissions:**
+- None, available to everyone.
+
+---
+

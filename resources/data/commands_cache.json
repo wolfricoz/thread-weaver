@@ -3,7 +3,7 @@
     "old": "Toggle the removal of threads after a x amount of days of inactivity per forum. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
     "regex": "Toggle the removal of threads threads based on a regex, allowing for pings or other content to automatically be removed after x amount of days.\n\nPermissions:\n- Manage guild\n- Premium access",
     "missing_starter": "Toggle the removal of threads with missing starter message. Disabled by default\n\nPermissions:\n- Manage guild\n- Premium access",
-    "channel": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "channel": "Creates an export of a specific text channel. This will create a .zip file containing the channel's messages and image attachments. The file will be sent to the user who invoked the command via DM.\n\n**Parameters:**\n- `channel`: The text channel to export.\n- `channel_only`: When `True`, only the channel's own messages are exported. When `False`, the channel's threads are included as well.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
     "roles": "This command allows you to set the roles used by the bot for various features. For example, you can set the staff role that the bot will ping for thread updates or the role authorized to manage forum automod actions.\n\n**Permissions:**\n- `Manage Server`",
     "toggles": "This command allows you to enable or disable various features of the bot.\nYou can turn things on or off to best suit your server's needs.\n\n**Permissions:**\n- You'll need the `Manage Server` permission to use this command.",
     "reload_env": "Reloads the environment variables from the .env file.",
@@ -12,8 +12,12 @@
     "remove_staff": "[DEV] Removes a user from the Banwatch staff.\n\n**Permissions:**\n- `Developer`",
     "announce": "Missing Documentation",
     "leave_server": "Missing Documentation",
-    "thread": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
-    "forum": "Creates an export of a specific thread. This will create a .zip file containing the thread's messages and attachments. The file will be sent to the user who invoked the command.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "thread": "Creates an export of a single thread. This will create a .zip file containing the thread's messages and image attachments. The file will be sent to the user who invoked the command via DM.\n\n**Parameters:**\n- `thread`: The thread to export.\n- `delete`: Whether to delete the thread once the export has been sent. Defaults to `False`.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "threads": "Creates an export of every thread in a specific text channel. The channel's own messages are skipped; only its threads are archived. This will create a .zip file containing those threads' messages and image attachments. The file will be sent to the user who invoked the command via DM.\n\n**Parameters:**\n- `channel`: The text channel whose threads should be exported.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "forum": "Creates an export of an entire forum, including every thread it contains. This will create a .zip file containing those threads' messages and image attachments. The file will be sent to the user who invoked the command via DM.\n\n**Parameters:**\n- `forum`: The forum channel to export.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
+    "build_export_embed": "Builds the export summary embed. One field per stat, so it's easy to prune.",
+    "send_file": "Uploads the finished archive, sends the summary embed to the user who invoked the command, then cleans up the temporary files.\n\nIf the archive is too large for Discord it is uploaded to the download site and only a link is DMed. If the DM cannot be delivered, a fallback message is sent in the channel the command was used in.\n\n:param export_class: The completed ThreadArchive holding the generated .zip.\n:param interaction: The interaction that triggered the export; used for the target user and the fallback channel.\n:param channel: The thread, channel or forum that was exported; used for the embed title and for the optional deletion.\n:param delete: Whether to delete `channel` once the export has been sent. Defaults to `False`.\n:return: None",
+    "category": "Creates an export of every channel in a category. Each channel is archived separately, producing one .zip file per channel containing that channel's messages and image attachments. Each file will be sent to the user who invoked the command via DM.\n\n**Parameters:**\n- `category`: The category whose channels should be exported.\n- `channel_only`: When `True`, only each channel's own messages are exported. When `False`, their threads are included as well.\n- `thread_only`: Currently has no effect; it is not passed through to the archiver.\n\n**Permissions:**\n- `Manage Threads`\n- `Premium Access`",
     "add": "Adds the chosen forum channel for the bot, enabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
     "remove": "Removes the chosen forum channel from the bot's database, disabling the features the bot provides for forum channels.\n\nPermissions:\n- Manage guild",
     "add_pattern": "Add / Remove / List patterns for forum threads.\n\nPermissions:\n- Manage guild\n- Premium access",
@@ -25,5 +29,7 @@
     "copy": "Copy a forum with all settings!",
     "add_all": "Missing Documentation",
     "purge": "Purge all threads in a forum, notify_user returns the contents of the thread to the user that started it.",
-    "archive_threads": "Archives all threads in the specified TextChannel.\n\n**Permissions:**\n- Requires `Manage Guild` permission."
+    "archive_threads": "Archives all threads in the specified TextChannel.\n\n**Permissions:**\n- Requires `Manage Guild` permission.",
+    "support_invite": "Returns the support server's invite, or None if it isn't available.",
+    "privacy": "Shows what data Forum Manager holds about you and how to have it removed.\n\n**Permissions:**\n- None, available to everyone."
 }

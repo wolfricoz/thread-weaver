@@ -98,7 +98,7 @@ Permissions:
 
 ### `copy`
 
-**Usage:** `/forums copy <forum> <name>`
+**Usage:** `/forums copy <original_forum> <new_forum> <name>`
 
 > Copy a forum with all settings!
 
