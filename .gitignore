@@ -5,4 +5,3 @@ tests/.env.test
 tests/test_modules/.env.test
 /playground/
 /logs/
-/alembic.ini
